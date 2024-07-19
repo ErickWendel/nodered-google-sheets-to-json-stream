@@ -4,17 +4,18 @@
         credentials: {
             creds: {},
         },
+
         defaults: {
-            name: {}
+            name: {},
         },
         label: function () {
             return this.name || "Unknown"
         },
 
         oneditsave: function () {
-            const creds = $('#node-config-input-creds').val()
+            const credentials = $('#node-config-input-creds').val()
             try {
-                var auth = JSON.parse(creds);
+                var auth = JSON.parse(credentials);
                 this.name = auth.client_email;
             }
             catch {
@@ -26,14 +27,14 @@
 
 <script type="text/html" data-template-name="gauth">
     <div class="form-row">
-        <label for="node-config-input-authtoken">Creds</label>
+        <label for="node-config-input-authtoken">Credentials</label>
         <textarea rows="15" cols="120" id="node-config-input-creds" placeholder="Google Service Accounts Credentials JSON"></textarea>
         <input type="hidden" id="node-input-name">
     </div>
 </script>
 
 <script type="text/html" data-help-name="gauth">
-    <p>Google Creds</p>
+    <p>Google credentials</p>
     <h3>Details</h3>
     <p>Copy JSON object for a Google Service Account Here.</p>
     <p>

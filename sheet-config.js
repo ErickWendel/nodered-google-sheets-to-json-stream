@@ -1,13 +1,9 @@
 
 module.exports = function (RED) {
-    function gauth(n) {
-        RED.nodes.createNode(this, n);
-        this.creds = n.creds;
+    function gauth(ctx) {
+        RED.nodes.createNode(this, ctx);
+        this.creds = ctx.creds;
     }
 
-    RED.nodes.registerType("gauth", gauth, {
-        credentials: {
-            creds: { type: "text" }
-        }
-    });
+    RED.nodes.registerType("gauth", gauth);
 };
