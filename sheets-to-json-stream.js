@@ -3,9 +3,17 @@ const creds = require('./creds.json')
 const google = require('@googleapis/sheets');
 const { JWT } = require('google-auth-library');
 
-async function getSheetsMetadata({ sheets, sheetsMetadata, sheetId }) {
+async function getSheetData({ sheets, spreadsheetId, range }) {
+    const valuesResponse = await sheets.spreadsheets.values.get({
+        spreadsheetId,
+        range,
+    });
+
+    return valuesResponse
+}
+async function getSheetsMetadata({ sheets, sheetsMetadata, spreadsheetId }) {
     const response = await sheets.spreadsheets.get({
-        spreadsheetId: sheetId,
+        spreadsheetId,
     });
 
     const sheetData = await Promise.all(response.data.sheets.map(async sheet => {
@@ -13,11 +21,7 @@ async function getSheetsMetadata({ sheets, sheetsMetadata, sheetId }) {
 
         // Fetch the first row to use as headers
         const range = `${sheetTitle}!A1:1`;
-        const valuesResponse = await sheets.spreadsheets.values.get({
-            spreadsheetId: sheetId,
-            range: range,
-        });
-
+        const valuesResponse = await getSheetData({ sheets, spreadsheetId, range })
         const headers = valuesResponse.data.values ? valuesResponse.data.values[0] : [];
 
         // Calculate the cell range in A1 notation
@@ -42,7 +46,7 @@ async function getSheetsMetadata({ sheets, sheetsMetadata, sheetId }) {
         sheets: sheetData,
     };
 
-    sheetsMetadata.set(sheetId, metadata);
+    sheetsMetadata.set(spreadsheetId, metadata);
 
     return metadata;
 }
@@ -81,9 +85,8 @@ module.exports = function (RED) {
         // Define an HTTP endpoint to handle the request from the editor
         RED.httpAdmin.post('/sheets-to-json-stream/sheets-options', async function onSheetOptionsRequest(req, res) {
             try {
-                const { sheetId } = req.body
-                const metadata = await getSheetsMetadata({ sheets, sheetsMetadata, sheetId });
-                node.warn(metadata)
+                const { sheetId: spreadsheetId } = req.body
+                const metadata = await getSheetsMetadata({ sheets, sheetsMetadata, spreadsheetId });
 
                 return res.json(metadata);
             } catch (error) {
