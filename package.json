@@ -1,0 +1,40 @@
+{
+  "name": "@erickwendel/nodered-sheets-to-json-stream",
+  "version": "0.0.1",
+  "main": "sheets-to-json-stream.js",
+  "bugs": {
+    "url": "https://github.com/ErickWendel/nodered-sheets-to-json-stream/issues"
+  },
+  "scripts": {
+    "start": "node sheets-to-json-stream.js",
+    "copy-files": "cp -r *.html *.js *.json misc/data/node_modules/@erickwendel/nodered-sheets-to-json-stream",
+    "start-nodered": "cd misc && docker-compose up -d",
+    "restart-nodered-on-change": "nodemon --exec 'npm run copy-files && cd misc && docker-compose restart nodered && docker logs nodered'"
+  },
+  "author": "erickwendel",
+  "keywords": [
+    "node-red",
+    "google-api",
+    "google-sheets",
+    "on-demand-processing"
+  ],
+  "node-red": {
+    "version": ">=2.0.0",
+    "nodes": {
+      "sheets-to-json-stream": "sheets-to-json-stream.js",
+      "sheet-config": "sheet-config.js"
+    }
+  },
+  "engines": {
+    "node": ">=16.0.0"
+  },
+  "license": "ISC",
+  "description": "",
+  "devDependencies": {
+    "node-red-node-test-helper": "^0.3.4"
+  },
+  "dependencies": {
+    "@googleapis/sheets": "^9.0.0",
+    "google-auth-library": "^9.11.0"
+  }
+}

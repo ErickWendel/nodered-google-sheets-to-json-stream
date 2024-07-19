@@ -1,0 +1,241 @@
+<script type="text/javascript">
+    RED.nodes.registerType('sheets-to-json-stream', {
+        category: 'function',
+        color: '#0da95f',
+        defaults: {
+            creds: { value: "", type: "gauth" },
+            sheetId: { value: "", default: '1Mte7nOo6oqvI4me-tnEenCci0l8bR04810B_q1U_1Ro' },
+            sheetList: { value: "" },
+            columns: { value: "" },
+            name: { value: "" }
+        },
+        inputs: 1,
+        outputs: 1,
+        icon: "font-awesome/fa-table",
+        label: function () {
+            return this.name || "sheets-to-json-stream";
+        },
+        oneditprepare: function () {
+            const sheetListEl = $("#node-input-sheetList");
+            const sheetsColumnsEl = $('#node-input-columns')
+            const spreadSheetIdEl = $('#node-input-sheetId')
+            const reloadFieldsEl = $('#reload-fields')
+            const columnsLabel = $('#columnsLabel')
+            const handleCellsAsEl = $('input[name="handle-as"]')
+
+            let _metadata = {}
+
+            sheetsColumnsEl.typedInput({ 'types': ['json'] })
+            sheetsColumnsEl.typedInput('value', '[]');
+            sheetsColumnsEl.typedInput('disable')
+
+            // Function to send an event to the runtime
+            async function dispatchEventToRuntime(data) {
+                const result = await fetch('sheets-to-json-stream/sheets-options', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(data)
+                });
+
+                return result.json()
+            }
+            function updateSheetListAndCells(options, hide = false) {
+
+                sheetListEl.empty(); // Clear existing options
+
+                options.forEach(function (option) {
+                    sheetListEl.append(new Option(option.text, option.value, option.selected));
+                });
+
+                sheetListEl.prop('disabled', hide);
+                sheetsColumnsEl.prop('disabled', hide);
+
+            }
+
+            async function onSheetIdChange() {
+                const sheetId = spreadSheetIdEl.val()
+                if (!sheetId) return
+                updateSheetListAndCells([{ text: 'Retrieving data...' }], true)
+
+                try {
+                    _metadata = await dispatchEventToRuntime({ sheetId })
+
+                    console.log('from runtime:', _metadata);
+                    // Simulate retrieving dynamic options based on the creds
+                    const sheetOptions = _metadata.sheets.map(({ title }, index) => ({
+                        text: title, value: title, selected: index === 0
+                    }))
+
+                    updateSheetListAndCells(sheetOptions)
+                    updateCellOptions()
+
+                } catch (error) {
+                    updateSheetListAndCells([{ text: 'error loading your sheets...' }], true)
+                    console.error(error)
+                }
+
+            }
+
+            function updateCellOptions() {
+                const sheetTitle = sheetListEl.val();
+                if (!sheetTitle) return;
+
+                const sheet = _metadata.sheets.find(item => item.title == sheetTitle);
+
+                const optCell = this.value;
+                const isCellsChosen = optCell === "cells";
+                const text = isCellsChosen ? "Cells" : "Columns";
+                columnsLabel.text(text);
+
+                const cellVal = isCellsChosen ? [sheet.cellsRange] : sheet.headers;
+
+                sheetsColumnsEl.typedInput('value', JSON.stringify(cellVal));
+                sheetsColumnsEl.typedInput('enable')
+
+            }
+
+
+
+            spreadSheetIdEl.on('change', onSheetIdChange);
+            reloadFieldsEl.on('click', onSheetIdChange);
+
+            sheetListEl.on('change', updateCellOptions)
+            handleCellsAsEl.on('change', updateCellOptions)
+        }
+    });
+
+</script>
+<script type="text/html" data-template-name="sheets-to-json-stream">
+    <div class="form-row">
+        <label for="node-config-input-creds">creds</label>
+        <input type="text" id="node-input-creds">
+    </div>
+
+    <div class="form-row">
+        <label for="node-input-sheet">SpreadsheetID</label>
+        <div style="width: 70%; display: inline-flex;">
+            <input type="text" id="node-input-sheetId" placeholder="Spreadsheet ID" style="flex-grow: 1;">
+            <a id="reload-fields" class="red-ui-button" style="margin-left: 10px;">
+                <i class="fa fa-refresh" aria-hidden="true"></i>
+            </a>
+        </div>
+
+    </div>
+
+    <div class="form-row">
+        <label for="node-input-method">Sheet</label>
+        <select type="text" id="node-input-sheetList" style="width:70%;" disabled>
+        </select>
+    </div>
+
+    <div class="form-row" style="display: flex; align-items: center; justify-content: center; margin-left: 20%;">
+        <div style="display: flex; align-items: center;">
+            <label for="handle-as-columns" class="form-label" style="margin-right: 5px; width: 60px; display: inline-block; vertical-align: middle;">Columns</label>
+            <input type="radio" id="handle-as-columns" name="handle-as" class="form-input" value="columns" checked style="vertical-align: middle;">
+        </div>
+
+        <div style="display: flex; align-items: center; margin-right: 10px;">
+            <label for="handle-as-cells" class="form-label" style="margin-right: 5px; width: 40px; display: inline-block; vertical-align: middle;">Cells</label>
+            <input type="radio" id="handle-as-cells" name="handle-as" class="form-input" value="cells"  style="vertical-align: middle;">
+        </div>
+    </div>
+
+    <div class="form-row">
+        <label for="node-input-cells" id="columnsLabel">Columns</label>
+        <input type="text" id="node-input-columns" placeholder="[]" value="'[]'">
+    </div>
+
+    <div class="form-row">
+        <label for="node-input-name"><i class="icon-tag"></i> Name</label>
+        <input type="text" id="node-input-name" placeholder="label">
+    </div>
+</script>
+
+<script type="text/html" data-help-name="sheets-to-json-stream">
+    <p> Read and Write Google Sheets data.</p>
+
+    <h3> Details </h4>
+
+    <h4> SpreadsheetID</h4>
+    The sheet ID can be found in the URL of your google sheet, for example in <code>https://docs.google.com/spreadsheets/d/1UuVIH2O38XK0TfPMGHk0HG_ixGLtLk6WoBKh4YSrDm4/edit#gid=0</code>
+    The ID would be <code>1UuVIH2O38XK0TfPMGHk0HG_ixGLtLk6WoBKh4YSrDm4</code>
+    If you want to specify the tab of the worksheet (eg Sheet1, Sheet2 etc.) This is part of the cells config.
+
+    <h4> Cells </h4>
+    Google sheets uses the following syntax to reference a tab and cells of the worksheet
+    The  format is <code>Sheet1!A1:C3</code>
+    Where Sheet1 is the Sheet name followed by a ! then the grid of the first cell eg A1 then a : and finally the grid of the last cell eg C3
+
+    A range of cells can be a Row at A1:A5, a Column A1:E1 or even a block such as A1:C3
+
+    <h4> Flatten Matrix </h4>
+    If you fetch multiple rows and columns you end up with a 'matrix' that is an array of arrays, or even if you fetch a single column you end up with an array of single value arrays,
+    The easiest way to see it is to fetch a column like A1:A5, without flatten enabled you will get back [[A1],[A2],[A3],[A4],[A5]] instead of [A1,A2,A3,A4,A5].
+
+
+    <h3> Inputs </h3>
+    <dl class="message-properties">
+    <dt>payload
+        <span class="property-type">string | array</span>
+    </dt>
+    <dd> The data to be written to the sheet at the specified cells, a string will write to a single cell an array will write a row and a matrix will write multiple rows </dd>
+    <dt>sheet
+        <span class="property-type">string </span>
+    </dt>
+    <dd> If the Sheet ID is not specified in the config it can be set here. </dd>
+
+    <dt>cells
+        <span class="property-type">string</span>
+    </dt>
+    <dd> If the Cells are not specified in the config they can be set here </dd>
+    </dl>
+
+    <h3> Output </h3>
+    <h4> Get Cells </h4>
+    For a Get Cells method the payload will contain the requested cell data as follows:
+    If a single cell is requested <code>msg.payload</code> will contain the value of that cell,
+    If a single row or column is requested <code>msg.payload</code> will contain an array of values for that row/column
+    If both row and columns are request msg.payload will contain nested arrays (a matrix) as columns eg for A1:C3 :
+    <code>[["A1","B1","C1"],["A2","B2","C2"],["A3","B3","C3"]]</code>
+
+    <h4> Append Row or Update Cells </h4>
+    For update or append methods the payload contains data about the cells that have been updated
+    <dl class="message-properties">
+        <dt>spreadsheetId
+            <span class="property-type">string</span>
+        </dt>
+        <dd> The ID of the Spreadsheet that has been updated </dd>
+        <dt>updatedRange
+            <span class="property-type">string </span>
+        </dt>
+        <dd> The Tab and Cells that have been updated </dd>
+        <dt>updatedRows
+            <span class="property-type">int</span>
+        </dt>
+        <dd> Number of Rows Updated </dd>
+        <dt>updatedColumns
+            <span class="property-type">int</span>
+        </dt>
+        <dd> Number of Columns Updated </dd>
+        <dt>updatedCells
+            <span class="property-type">int</span>
+        </dt>
+        <dd> Number of Cells Updated </dd>
+    </dl>
+
+    <h4> Clear Cells </h4>
+    For a Clear method the response just contains the SpreadsheetID and Range that has been cleared
+    <dl class="message-properties">
+
+    <dt>spreadsheetId
+        <span class="property-type">string</span>
+    </dt>
+    <dd> The ID of the Spreadsheet that has been updated </dd>
+    <dt>clearedRange
+        <span class="property-type">string </span>
+    </dt>
+    <dd> The Tab and Cells that have been cleared </dd>
+    </dl>
+</script>

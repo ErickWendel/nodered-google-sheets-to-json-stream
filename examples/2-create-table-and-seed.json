@@ -1,0 +1,158 @@
+[
+    {
+        "id": "77b23ca825156632",
+        "type": "group",
+        "z": "6d279fa331dab076",
+        "style": {
+            "stroke": "#999999",
+            "stroke-opacity": "1",
+            "fill": "none",
+            "fill-opacity": "1",
+            "label": true,
+            "label-position": "nw",
+            "color": "#a4a4a4"
+        },
+        "nodes": [
+            "258c38f1cb3658ed",
+            "809bc6dcb3f931da",
+            "84f791d88e2d7f4d",
+            "311f61d66ce9a3b7",
+            "520b80073a7ff2c1",
+            "88180037fabcf56d"
+        ],
+        "x": 744,
+        "y": 19,
+        "w": 392,
+        "h": 242
+    },
+    {
+        "id": "258c38f1cb3658ed",
+        "type": "inject",
+        "z": "6d279fa331dab076",
+        "g": "77b23ca825156632",
+        "name": "",
+        "props": [
+            {
+                "p": "payload"
+            },
+            {
+                "p": "topic",
+                "vt": "str"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "payload": "",
+        "payloadType": "date",
+        "x": 850,
+        "y": 100,
+        "wires": [
+            [
+                "88180037fabcf56d"
+            ]
+        ]
+    },
+    {
+        "id": "809bc6dcb3f931da",
+        "type": "function",
+        "z": "6d279fa331dab076",
+        "g": "77b23ca825156632",
+        "name": "create courses and student table",
+        "func": "const knex = msg.knex \n\nawait knex.schema.dropTableIfExists('students');\nawait knex.schema.dropTableIfExists('courses');\n\nawait knex.schema.createTable('courses', function (table) {\n    table.increments('id').primary();\n    table.string('name');\n});\n\nawait knex.schema\n    .createTable('students', (table) => {\n        table.increments('id').primary();\n        table.string('name');\n        table.integer('courseId');\n\n        table\n            .foreign('courseId')\n            .references('courses.id')\n            .withKeyName('fk_fkey_courses');\n    })\n\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 910,
+        "y": 180,
+        "wires": [
+            [
+                "84f791d88e2d7f4d"
+            ]
+        ]
+    },
+    {
+        "id": "84f791d88e2d7f4d",
+        "type": "function",
+        "z": "6d279fa331dab076",
+        "g": "77b23ca825156632",
+        "name": "seed data",
+        "func": "await msg.knex('courses')\n.insert([\n    { name: 'Método TAJS' },\n    { name: 'Formação JavaScript Expert' }\n]);\n\nawait msg.knex('students')\n.insert([\n    { name: 'Zezin' , courseId: 1},\n]);\n\nconst [courses, students] = await Promise.all(\n    [\n        msg.knex('courses').select('*'),\n        msg.knex('students').select('*'),\n    ]\n)\n\nmsg.payload = {courses, students}\n    \nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 850,
+        "y": 220,
+        "wires": [
+            [
+                "311f61d66ce9a3b7"
+            ]
+        ]
+    },
+    {
+        "id": "311f61d66ce9a3b7",
+        "type": "debug",
+        "z": "6d279fa331dab076",
+        "g": "77b23ca825156632",
+        "name": "debug 3",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": true,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "payload",
+        "statusType": "auto",
+        "x": 1030,
+        "y": 220,
+        "wires": []
+    },
+    {
+        "id": "520b80073a7ff2c1",
+        "type": "comment",
+        "z": "6d279fa331dab076",
+        "g": "77b23ca825156632",
+        "name": "create tables and seed data",
+        "info": "",
+        "x": 890,
+        "y": 60,
+        "wires": []
+    },
+    {
+        "id": "88180037fabcf56d",
+        "type": "knex-node",
+        "z": "6d279fa331dab076",
+        "g": "77b23ca825156632",
+        "connection": "3077bf2b6221741f",
+        "x": 910,
+        "y": 140,
+        "wires": [
+            [
+                "809bc6dcb3f931da"
+            ]
+        ]
+    },
+    {
+        "id": "3077bf2b6221741f",
+        "type": "knex-config",
+        "connectionName": "db-connection",
+        "uri": "${POSTGRES_URI}",
+        "searchPath": "[\"public\"]",
+        "ssl": false,
+        "timezone": "${TZ}",
+        "poolMin": "2",
+        "poolMax": "10",
+        "acquireTimeoutMillis": "30000",
+        "createTimeoutMillis": "30000",
+        "idleTimeoutMillis": "1000",
+        "additionalKnexConf": "{}"
+    }
+]
