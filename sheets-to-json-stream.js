@@ -1,5 +1,3 @@
-const creds = require('./creds.json')
-
 const google = require('@googleapis/sheets');
 const { JWT } = require('google-auth-library');
 
@@ -11,6 +9,7 @@ async function getSheetDataByRange({ sheets, spreadsheetId, range }) {
 
     return valuesResponse
 }
+
 async function getSheetsMetadata({ sheets, sheetsMetadata, spreadsheetId }) {
     const response = await sheets.spreadsheets.get({
         spreadsheetId,
@@ -106,7 +105,7 @@ module.exports = function (RED) {
             return res.json(metadata);
         } catch (error) {
             RED.log.error(error)
-            RED.log.error(`ensure you've been using the correct spreadsheet id, have the proper access to it and the credentials data is correct`)
+            RED.log.error(`ensure the credentials data is correct, you've been using the correct spreadsheet id and have the proper access to it`)
             res.status(500).json({ error })
         }
     }
@@ -118,7 +117,6 @@ module.exports = function (RED) {
         const sheetId = ctx.sheetId
         // const columns = ctx.columns
         const creds = RED.nodes.getNode(ctx.credentials);
-        console.log({ creds, sheetId })
 
         node.on('input', function (msg) {
             // const isRange = typeof columns[0] === 'string'

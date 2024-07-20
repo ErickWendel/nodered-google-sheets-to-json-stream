@@ -30,7 +30,6 @@
 
             let _metadata = null
 
-
             spreadSheetIdEl.val('1Mte7nOo6oqvI4me-tnEenCci0l8bR04810B_q1U_1Ro')
 
             sheetsRangeEl.typedInput({ 'types': ['str'] })
@@ -41,7 +40,6 @@
             sheetsColumnsEl.typedInput('value', '["id", "email"]');
             sheetsColumnsEl.typedInput('disable')
 
-            // Function to send an event to the runtime
             async function dispatchEventToRuntime(data) {
                 const result = await fetch('/sheets-to-json-stream/sheets-options', {
                     method: 'POST',
@@ -56,7 +54,7 @@
 
             function updateSheetListAndCells(options, hide = false) {
 
-                sheetListEl.empty(); // Clear existing options
+                sheetListEl.empty();
 
                 options.forEach(function (option) {
                     sheetListEl.append(new Option(option.text, option.value, option.selected));
@@ -68,7 +66,6 @@
             }
 
             async function onSheetIdChange() {
-                console.count('onSheetIdChange')
                 const sheetId = spreadSheetIdEl.val()
                 if (!sheetId) return
 
@@ -100,7 +97,6 @@
             }
 
             function updateCellOptions() {
-                console.count('updateCellOptions')
                 const sheetTitle = sheetListEl.val();
                 if (!sheetTitle) return;
                 if (!_metadata) return;
