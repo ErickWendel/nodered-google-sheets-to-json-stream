@@ -3,7 +3,7 @@
         category: 'function',
         color: '#0da95f',
         defaults: {
-            credentials: { value: "", type: "gauth" },
+            config: { value: "", type: 'gauth' },
             sheetId: { value: "" },
             sheetList: { value: "" },
             range: { value: "" },
@@ -18,7 +18,8 @@
         },
         oneditprepare: function () {
 
-            const credentialsEl = $('#node-input-credentials');
+            const gauthNodeIdEl = $('#node-input-config')
+
             const sheetListEl = $("#node-input-sheetList");
             const sheetsRangeEl = $('#node-input-range')
             const sheetsColumnsEl = $('#node-input-columns')
@@ -28,6 +29,9 @@
             const handleCellsAsEl = $('input[name="handle-as"]')
 
             let _metadata = null
+
+
+            spreadSheetIdEl.val('1Mte7nOo6oqvI4me-tnEenCci0l8bR04810B_q1U_1Ro')
 
             sheetsRangeEl.typedInput({ 'types': ['str'] })
             sheetsRangeEl.typedInput('value', 'Sheet1:A1:B2');
@@ -49,6 +53,7 @@
 
                 return result.json()
             }
+
             function updateSheetListAndCells(options, hide = false) {
 
                 sheetListEl.empty(); // Clear existing options
@@ -63,18 +68,23 @@
             }
 
             async function onSheetIdChange() {
+                console.count('onSheetIdChange')
                 const sheetId = spreadSheetIdEl.val()
-                const credentials = credentialsEl.val()
-
-                // if (!credentials || credentials === '_ADD_') return
                 if (!sheetId) return
+
+                const gauthNodeId = gauthNodeIdEl.val()
+                const config = JSON.parse(RED.nodes.node(gauthNodeId)?.credentials?.config ?? '{}');
+                const credentials = { client_email: config.client_email, private_key: config.private_key }
                 updateSheetListAndCells([{ text: 'Retrieving data...' }], true)
 
                 try {
-                    _metadata = await dispatchEventToRuntime({ sheetId })
 
-                    console.log('from runtime:', _metadata);
-                    // Simulate retrieving dynamic options based on the credentials
+                    _metadata = await dispatchEventToRuntime({ sheetId, credentials, gauthNodeId })
+                    if (!_metadata.sheets) {
+                        updateSheetListAndCells([{ text: '' }], true)
+
+                        return
+                    }
                     const sheetOptions = _metadata.sheets.map(({ title }, index) => ({
                         text: title, value: title, selected: index === 0
                     }))
@@ -90,6 +100,7 @@
             }
 
             function updateCellOptions() {
+                console.count('updateCellOptions')
                 const sheetTitle = sheetListEl.val();
                 if (!sheetTitle) return;
                 if (!_metadata) return;
@@ -103,9 +114,6 @@
                 sheetsRangeEl.typedInput('enable')
             }
 
-
-
-
             spreadSheetIdEl.on('change', onSheetIdChange);
             reloadFieldsEl.on('click', onSheetIdChange);
 
@@ -117,8 +125,8 @@
 </script>
 <script type="text/html" data-template-name="sheets-to-json-stream">
     <div class="form-row">
-        <label for="node-config-input-credentials">credentials</label>
-        <input type="text" id="node-input-credentials">
+        <label for="node-config-input-config">config</label>
+        <input type="text" id="node-input-config">
     </div>
 
     <div class="form-row">

@@ -2,7 +2,18 @@
     RED.nodes.registerType('gauth', {
         category: 'config',
         credentials: {
-            creds: {},
+            type: 'json',
+            config: {
+                validate: function (v) {
+                    try {
+                        const credentials = JSON.parse(v)
+                        return credentials.client_email && credentials.private_key
+                    } catch (error) {
+                        return false
+                    }
+
+                }
+            },
         },
 
         defaults: {
@@ -11,12 +22,13 @@
         label: function () {
             return this.name || "Unknown"
         },
-
+        oneditprepare: function () {
+        },
         oneditsave: function () {
-            const credentials = $('#node-config-input-creds').val()
+            const credentials = $('#node-config-input-config').val()
             try {
-                var auth = JSON.parse(credentials);
-                this.name = auth.client_email;
+                this.config = JSON.parse(credentials)
+                this.name = this.config.client_email;
             }
             catch {
                 this.name = "Unknown"
@@ -27,8 +39,8 @@
 
 <script type="text/html" data-template-name="gauth">
     <div class="form-row">
-        <label for="node-config-input-authtoken">Credentials</label>
-        <textarea rows="15" cols="120" id="node-config-input-creds" placeholder="Google Service Accounts Credentials JSON"></textarea>
+        <label for="node-config-input-config">Credentials</label>
+        <textarea rows="15" cols="120" id="node-config-input-config" placeholder="Google Service Accounts Credentials JSON"></textarea>
         <input type="hidden" id="node-input-name">
     </div>
 </script>
