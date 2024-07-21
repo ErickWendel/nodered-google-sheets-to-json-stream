@@ -101,7 +101,7 @@
                 sheetsRangeEl.typedInput('enable')
             }
 
-            const startListening = () => {
+            function startListening() {
                 spreadSheetIdEl.on('change', onSheetIdChange);
                 reloadFieldsEl.on('click', onSheetIdChange);
 
