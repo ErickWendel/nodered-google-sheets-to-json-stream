@@ -6,6 +6,7 @@
             config: { value: "", type: 'gauth' },
             sheetId: { value: "" },
             sheetList: { value: "" },
+            sheetListValues: { value: "" },
             range: { value: "" },
             columns: { value: "" },
             name: { value: "" }
@@ -17,10 +18,9 @@
             return this.name || "sheets-to-json-stream";
         },
         oneditprepare: function () {
-
             const gauthNodeIdEl = $('#node-input-config')
-
             const sheetListEl = $("#node-input-sheetList");
+            const sheetListValuesEl = $("#node-input-sheetListValues");
             const sheetsRangeEl = $('#node-input-range')
             const sheetsColumnsEl = $('#node-input-columns')
             const spreadSheetIdEl = $('#node-input-sheetId')
@@ -29,16 +29,6 @@
             const handleCellsAsEl = $('input[name="handle-as"]')
 
             let _metadata = null
-
-            spreadSheetIdEl.val('1Mte7nOo6oqvI4me-tnEenCci0l8bR04810B_q1U_1Ro')
-
-            sheetsRangeEl.typedInput({ 'types': ['str'] })
-            sheetsRangeEl.typedInput('value', 'Sheet1:A1:B2');
-            sheetsRangeEl.typedInput('disable')
-
-            sheetsColumnsEl.typedInput({ 'types': ['json'] })
-            sheetsColumnsEl.typedInput('value', '["id", "email"]');
-            sheetsColumnsEl.typedInput('disable')
 
             async function dispatchEventToRuntime(data) {
                 const result = await fetch('/sheets-to-json-stream/sheets-options', {
@@ -53,12 +43,13 @@
             }
 
             function updateSheetListAndCells(options, hide = false) {
-
                 sheetListEl.empty();
 
                 options.forEach(function (option) {
                     sheetListEl.append(new Option(option.text, option.value, option.selected));
                 });
+
+                sheetListValuesEl.val(JSON.stringify(options))
 
                 sheetListEl.prop('disabled', hide);
                 sheetsColumnsEl.prop('disabled', hide);
@@ -110,11 +101,40 @@
                 sheetsRangeEl.typedInput('enable')
             }
 
-            spreadSheetIdEl.on('change', onSheetIdChange);
-            reloadFieldsEl.on('click', onSheetIdChange);
+            const startListening = () => {
+                spreadSheetIdEl.on('change', onSheetIdChange);
+                reloadFieldsEl.on('click', onSheetIdChange);
 
-            sheetListEl.on('change', updateCellOptions)
-            handleCellsAsEl.on('change', updateCellOptions)
+                sheetListEl.on('change', updateCellOptions)
+                handleCellsAsEl.on('change', updateCellOptions)
+            }
+
+            // spreadSheetIdEl.val('1Mte7nOo6oqvI4me-tnEenCci0l8bR04810B_q1U_1Ro')
+            sheetsRangeEl.typedInput({ 'types': ['str'] })
+            sheetsColumnsEl.typedInput({ 'types': ['json'] })
+            const sheetsListValue = sheetListValuesEl.val()
+            if (sheetsListValue) {
+                const data = JSON.parse(sheetListValuesEl.val())
+                updateSheetListAndCells(data)
+            }
+
+            if (!sheetsRangeEl.typedInput('value')) {
+
+                sheetsRangeEl.typedInput('value', 'Sheet1:A1:B2');
+                sheetsRangeEl.typedInput('disable')
+
+                sheetsColumnsEl.typedInput('value', '["id", "email"]');
+                sheetsColumnsEl.typedInput('disable')
+
+                sheetListEl.prop('disabled', true)
+
+                startListening()
+
+                return
+            }
+
+            setTimeout(() => startListening());
+
         }
     });
 
@@ -138,8 +158,9 @@
 
     <div class="form-row">
         <label for="node-input-method">Sheet</label>
-        <select type="text" id="node-input-sheetList" style="width:70%;" disabled>
+        <select type="text" id="node-input-sheetList" style="width:70%;">
         </select>
+        <input type="hidden" id="node-input-sheetListValues" >
     </div>
 
     <div class="form-row">

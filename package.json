@@ -7,7 +7,7 @@
   },
   "scripts": {
     "start": "node sheets-to-json-stream.js",
-    "copy-files": "cp -r *.html *.js *.json misc/data/node_modules/@erickwendel/nodered-sheets-to-json-stream",
+    "copy-files": "rsync -av --exclude='node_modules' --include='*.html' --include='*.js' --include='*.json' --include='*/' --exclude='*' ./ misc/data/node_modules/@erickwendel/nodered-sheets-to-json-stream",
     "start-nodered": "cd misc && docker-compose up -d",
     "stop-nodered": "cd misc && docker-compose down",
     "restart-nodered-on-change": "nodemon -e html,js,json,css --exec 'npm run copy-files && cd misc && docker-compose restart nodered && docker logs -f nodered'"
@@ -22,8 +22,8 @@
   "node-red": {
     "version": ">=2.0.0",
     "nodes": {
-      "sheets-to-json-stream": "sheets-to-json-stream.js",
-      "sheet-config": "sheet-config.js"
+      "sheets-to-json-stream": "./src/sheets-to-json-stream/sheets-to-json-stream.js",
+      "sheet-config": "./src/sheet-config/sheet-config.js"
     }
   },
   "engines": {
