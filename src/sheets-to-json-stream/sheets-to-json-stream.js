@@ -5,7 +5,7 @@ const SCOPES = [
     'https://www.googleapis.com/auth/spreadsheets.readonly',
 ];
 
-const ROWS_PER_REQUEST = 20;
+const ROWS_PER_REQUEST = 100;
 
 /**
  * Class to fetch and process Google Sheets data.
@@ -71,19 +71,26 @@ class SheetsToJSON {
      * @yields {Promise<Object>} - A promise that resolves to the sheet data.
      */
     async *consumeSheetOnDemand({ spreadsheetId, range, sheetMetadata }) {
-        const columnCount = sheetMetadata.columnCount;
         const totalRows = sheetMetadata.rowCount;
-        const columnLetter = this.getColumnLetter(columnCount);
 
-        let rangeStart = 1;
+        const match = range.match(/([A-Z]+)(\d*):([A-Z]+)(\d*)/);
+        if (!match) {
+            throw new Error('Invalid range format');
+        }
+
+        const startColumn = match[1];
+        const startRow = parseInt(match[2], 10) || 1;
+        const endColumn = match[3];
+        const endRow = parseInt(match[4], 10) || totalRows;
+
+        let rangeStart = startRow;
         let moreData = true;
 
         while (moreData) {
-            console.count('iterations')
-            const endRow = rangeStart + ROWS_PER_REQUEST - 1;
-            const rangeS = `A${rangeStart}:${columnLetter}`
-            const rangeE = endRow > totalRows ? totalRows : endRow
-            const newRange = `${sheetMetadata.title}!${rangeS}${rangeE}`;
+            console.count('iterations');
+            const endRangeRow = rangeStart + ROWS_PER_REQUEST - 1;
+            const rangeEnd = endRangeRow > endRow ? endRow : endRangeRow;
+            const newRange = `${sheetMetadata.title}!${startColumn}${rangeStart}:${endColumn}${rangeEnd}`;
 
             const data = await this.getSheetDataByRange({
                 spreadsheetId,
@@ -96,6 +103,7 @@ class SheetsToJSON {
             yield data;
         }
     }
+
 
     /**
      * Fetches metadata of the sheets in the spreadsheet.
@@ -244,8 +252,6 @@ module.exports = function main(RED) {
                 });
 
                 let headers = [];
-                let counter = 0
-                let maxItems = 4
                 for await (const data of stream) {
                     for (const line of data.values) {
                         if (!headers.length) {
@@ -262,9 +268,6 @@ module.exports = function main(RED) {
                         }
 
                         node.send({ payload: lineItem });
-                        if (++counter === maxItems) {
-                            return
-                        }
                     }
                 }
             } catch (error) {
