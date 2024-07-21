@@ -1,18 +1,20 @@
 const google = require('@googleapis/sheets');
 const { JWT } = require('google-auth-library');
-const { Readable } = require('stream')
+
 const SCOPES = [
     'https://www.googleapis.com/auth/spreadsheets.readonly',
 ];
+
+const ROWS_PER_REQUEST = 20;
 
 /**
  * Class to fetch and process Google Sheets data.
  */
 class SheetsToJSON {
     /**
-   * @type {import('@googleapis/sheets').sheets_v4.Sheets}
-   * @private
-   */
+     * @type {import('@googleapis/sheets').sheets_v4.Sheets}
+     * @private
+     */
     #sheets;
 
     /**
@@ -45,27 +47,55 @@ class SheetsToJSON {
     }
 
     /**
-    * Fetches sheet data by range.
-    * @param {Object} param - The parameter object.
-    * @param {string} param.spreadsheetId - The ID of the spreadsheet.
-    * @param {string} param.range - The A1 notation of the range to retrieve values from.
-    * @returns {Promise<Object|import('stream').Readable>} - A promise that resolves to the sheet data as a readable stream.
-    */
-    async getSheetDataByRange({ spreadsheetId, range }, asStream = false) {
-        const options = asStream ? { responseType: 'stream' } : {}
-        const response = await this.#sheets.spreadsheets.values.get(
-            {
-                spreadsheetId,
-                range,
-            },
-            options
-        );
-        if (asStream)
-            return Readable.from(response.data, { encoding: 'utf-8' });
+     * Fetches sheet data by range.
+     * @param {Object} param - The parameter object.
+     * @param {string} param.spreadsheetId - The ID of the spreadsheet.
+     * @param {string} param.range - The A1 notation of the range to retrieve values from.
+     * @returns {Promise<Object>} - A promise that resolves to the sheet data.
+     */
+    async getSheetDataByRange({ spreadsheetId, range }) {
+        const response = await this.#sheets.spreadsheets.values.get({
+            spreadsheetId,
+            range,
+        });
 
-        return response.data
+        return response.data;
     }
 
+    /**
+     * Async iterator to fetch sheet data in pages of ROWS_PER_REQUEST rows.
+     * @param {Object} param - The parameter object.
+     * @param {string} param.spreadsheetId - The ID of the spreadsheet.
+     * @param {string} param.range - The A1 notation of the range to retrieve values from.
+     * @param {Object} param.sheetMetadata - The metadata of the specific sheet.
+     * @yields {Promise<Object>} - A promise that resolves to the sheet data.
+     */
+    async *consumeSheetOnDemand({ spreadsheetId, range, sheetMetadata }) {
+        const columnCount = sheetMetadata.columnCount;
+        const totalRows = sheetMetadata.rowCount;
+        const columnLetter = this.getColumnLetter(columnCount);
+
+        let rangeStart = 1;
+        let moreData = true;
+
+        while (moreData) {
+            console.count('iterations')
+            const endRow = rangeStart + ROWS_PER_REQUEST - 1;
+            const rangeS = `A${rangeStart}:${columnLetter}`
+            const rangeE = endRow > totalRows ? totalRows : endRow
+            const newRange = `${sheetMetadata.title}!${rangeS}${rangeE}`;
+
+            const data = await this.getSheetDataByRange({
+                spreadsheetId,
+                range: newRange,
+            });
+
+            moreData = data.values && data.values.length === ROWS_PER_REQUEST;
+            rangeStart += ROWS_PER_REQUEST;
+
+            yield data;
+        }
+    }
 
     /**
      * Fetches metadata of the sheets in the spreadsheet.
@@ -80,13 +110,9 @@ class SheetsToJSON {
 
         const sheetsRequest = response.sheets.map(async sheet => {
             const sheetTitle = sheet.properties.title;
-
-            // Fetch the first row to use as headers
             const range = `${sheetTitle}!A1:1`;
-            const valuesResponse = await this.getSheetDataByRange({ spreadsheetId, range })
+            const valuesResponse = await this.getSheetDataByRange({ spreadsheetId, range });
             const headers = valuesResponse.values ? valuesResponse.values[0] : [];
-
-            // Calculate the cell range in A1 notation
             const rowCount = sheet.properties.gridProperties.rowCount;
             const columnCount = sheet.properties.gridProperties.columnCount;
             const columnLetter = this.getColumnLetter(columnCount);
@@ -102,6 +128,7 @@ class SheetsToJSON {
                 cellsRange: cellsRange,
             };
         });
+
         const sheetData = await Promise.all(sheetsRequest);
 
         const metadata = {
@@ -145,32 +172,28 @@ class SheetsToJSON {
         this.#sheets = this.#google.sheets({ version: 'v4', auth });
 
         const metadata = await this.getSheetsMetadata({ spreadsheetId });
+        this.metadata.set(spreadsheetId, metadata);
         return metadata;
     }
 }
 
-
-
 module.exports = function main(RED) {
-
-    const sheetsToJSON = new SheetsToJSON({ google, JWT })
-
+    const sheetsToJSON = new SheetsToJSON({ google, JWT });
 
     async function onSheetOptionsRequest(req, res) {
         try {
-
-            const { sheetId: spreadsheetId, credentials, gauthNodeId } = req.body
-            let googleSheetsConfig = credentials
+            const { sheetId: spreadsheetId, credentials, gauthNodeId } = req.body;
+            let googleSheetsConfig = credentials;
 
             if (!credentials.client_email) {
-                const config = RED.nodes.getNode(gauthNodeId)?.credentials?.config
-                if (!config) return res.status(200).send({})
+                const config = RED.nodes.getNode(gauthNodeId)?.credentials?.config;
+                if (!config) return res.status(200).send({});
 
-                googleSheetsConfig = JSON.parse(config)
+                googleSheetsConfig = JSON.parse(config);
             }
 
             if (!spreadsheetId || !googleSheetsConfig?.private_key || !googleSheetsConfig?.client_email) {
-                const message = `Invalid request sent with: ${JSON.stringify({ spreadsheetId, credentials })}`
+                const message = `Invalid request sent with: ${JSON.stringify({ spreadsheetId, credentials })}`;
                 RED.log.error(message);
                 return res.status(400).send(message);
             }
@@ -180,11 +203,10 @@ module.exports = function main(RED) {
 
             return res.json(metadata);
         } catch (error) {
-            console.error(error.stack)
-
-            RED.log.error(error)
-            RED.log.error(`ensure the credentials data is correct, you've been using the correct spreadsheet id and have the proper access to it`)
-            res.status(500).json({ error })
+            console.error(error.stack);
+            RED.log.error(error);
+            RED.log.error(`ensure the credentials data is correct, you've been using the correct spreadsheet id and have the proper access to it`);
+            res.status(500).json({ error });
         }
     }
 
@@ -194,48 +216,66 @@ module.exports = function main(RED) {
         const context = {
             spreadsheetId: ctx.sheetId,
             range: `${ctx.sheetList}!${ctx.range}`,
+            sheetTitle: ctx.sheetList,
             columns: ctx.columns,
             config: ctx.config,
-        }
-        // const columns = ctx.columns
-        const creds = JSON.parse(RED.nodes.getNode(context.config).credentials.config);
+        };
+
+        let sheetMetadata;
+        (async () => {
+            const metadata = sheetsToJSON.metadata.get(context.spreadsheetId);
+            if (metadata) {
+                sheetMetadata = metadata.sheets.find(item => item.title === context.sheetTitle);
+            }
+            if (!sheetMetadata) {
+                console.log('no metadata available!')
+                const creds = JSON.parse(RED.nodes.getNode(context.config).credentials.config);
+                const metadata = await sheetsToJSON.fetchSheetsMetadata(creds, context.spreadsheetId);
+                sheetMetadata = metadata.sheets.find(item => item.title === context.sheetTitle);
+            }
+        })();
+
         node.on('input', async function (msg) {
             try {
-                const metadata = await sheetsToJSON.fetchSheetsMetadata(creds, context.spreadsheetId)
-                const stream = await sheetsToJSON.getSheetDataByRange(context)
-                let headers = []
+                const stream = sheetsToJSON.consumeSheetOnDemand({
+                    spreadsheetId: context.spreadsheetId,
+                    range: context.range,
+                    sheetMetadata: sheetMetadata
+                });
 
-                for (const line of stream.values) {
-                    console.log('lengh', line.length)
-                    if (!headers.length) {
-                        headers = line
-                        continue
+                let headers = [];
+                let counter = 0
+                let maxItems = 4
+                for await (const data of stream) {
+                    for (const line of data.values) {
+                        if (!headers.length) {
+                            headers = line;
+                            continue;
+                        }
+
+                        const lineItem = {};
+                        for (const indexLine in line) {
+                            const headerName = headers[indexLine];
+                            if (!context.columns.includes(headerName)) continue
+
+                            lineItem[headerName] = line[indexLine];
+                        }
+
+                        node.send({ payload: lineItem });
+                        if (++counter === maxItems) {
+                            return
+                        }
                     }
-
-                    const lineItem = {}
-                    for (const indexLine in line) {
-                        const headerName = headers[indexLine]
-                        // if (!context.columns.includes(headerName) && headerName) continue
-
-                        lineItem[headerName] = line[indexLine]
-                    }
-
-                    node.send({ payload: lineItem });
                 }
-                // console.log('item', item)
-                // node.send(item);
-
             } catch (error) {
-                console.log('error', error)
+                console.log('error', error);
                 node.send({ payload: 'error' });
-
             }
 
             node.send(msg);
         });
 
         node.on('close', async function () {
-
         });
     }
 
@@ -246,4 +286,3 @@ module.exports = function main(RED) {
         }
     });
 };
-
