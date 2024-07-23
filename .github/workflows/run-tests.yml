@@ -12,7 +12,8 @@ on:
 jobs:
   setup-and-test:
     runs-on: ubuntu-latest
-
+    volumes:
+        - misc:/misc
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
