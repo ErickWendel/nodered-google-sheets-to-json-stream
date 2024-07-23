@@ -1,6 +1,5 @@
 const google = require('@googleapis/sheets');
 const { JWT } = require('google-auth-library');
-
 const SCOPES = [
     'https://www.googleapis.com/auth/spreadsheets.readonly',
 ];
@@ -86,7 +85,6 @@ class SheetsToJSON {
         let moreData = true;
 
         while (moreData) {
-            console.count('iterations');
             const endRangeRow = rangeStart + ROWS_PER_REQUEST - 1;
             const rangeEnd = endRangeRow > endRow ? endRow : endRangeRow;
             const newRange = `${sheetMetadata.title}!${startColumn}${rangeStart}:${endColumn}${rangeEnd}`;
@@ -252,7 +250,17 @@ module.exports = function main(RED) {
             let processedRows = totalLines
 
             return {
-                update() {
+                update(stop = false) {
+                    if (stop) {
+                        const missingLines = totalLines - processedRows;
+                        processedRows = totalLines
+                        return node.status({
+                            fill: "red",
+                            shape: "dot",
+                            text: `Stopped: ${missingLines}/${totalLines}`
+                        });
+                    }
+
                     --processedRows;
 
                     const missingLines = totalLines - processedRows;
@@ -273,10 +281,27 @@ module.exports = function main(RED) {
             text: `trigger to start!`
         });
 
+
+        let isProcessing = false; // State variable to track if the node is processing
+        const progress = configureProgress(node, context.range);
+
         node.on('input', async function (msg) {
+            // If the node is currently processing, stop the process and return
+            if (isProcessing) {
+                isProcessing = false;
+                progress.update(true)
+                return;
+            }
+            node.status({
+                fill: 'blue',
+                shape: "dot",
+                text: `process starting...`
+            });
+
+            // Set the node to processing state
+            isProcessing = true;
             try {
-                const sheetMetadata = await refreshMetadata()
-                const progress = configureProgress(node, context.range)
+                const sheetMetadata = await refreshMetadata();
 
                 const stream = sheetsToJSON.consumeSheetOnDemand({
                     spreadsheetId: context.spreadsheetId,
@@ -285,8 +310,11 @@ module.exports = function main(RED) {
                 });
 
                 let headers = [];
+
                 for await (const data of stream) {
+                    if (!isProcessing) break;
                     for (const line of data.values) {
+                        if (!isProcessing) break;
                         if (!headers.length) {
                             headers = line;
                             continue;
@@ -295,26 +323,40 @@ module.exports = function main(RED) {
                         const lineItem = {};
                         for (const indexLine in line) {
                             const headerName = headers[indexLine];
-                            if (!context.columns.includes(headerName)) continue
+                            if (!isProcessing) break;
+                            if (!context.columns.includes(headerName)) continue;
 
                             lineItem[headerName] = line[indexLine];
                         }
+
+                        if (!isProcessing) break;
 
                         node.send({
                             ...msg,
                             payload: lineItem,
                         });
-                        progress.update()
+                        progress.update();
                     }
                 }
+
+                // Reset the processing state after completion
+                isProcessing = false;
+
             } catch (error) {
                 console.log('error', error);
                 node.send({
                     ...msg,
                     payload: error
                 });
+                isProcessing = false;
+                node.status({
+                    fill: "red",
+                    shape: "dot",
+                    text: "Error"
+                });
             }
         });
+
 
         node.on('close', async function () {
         });
