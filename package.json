@@ -8,9 +8,13 @@
   "scripts": {
     "start": "node sheets-to-json-stream.js",
     "copy-files": "rsync -av --exclude='node_modules' --include='*.html' --include='*.js' --include='*.json' --include='*/' --exclude='*' ./ misc/data/node_modules/@erickwendel/nodered-sheets-to-json-stream",
-    "start-nodered": "cd misc && docker-compose up -d",
-    "stop-nodered": "cd misc && docker-compose down",
-    "restart-nodered-on-change": "nodemon -e html,js,json,css --exec 'npm run copy-files && cd misc && docker-compose restart nodered && docker logs -f nodered'"
+    "docker:start-nodered": "cd misc && docker-compose up -d",
+    "docker:stop-nodered": "cd misc && docker-compose down",
+    "docker:restart-nodered": "cd misc && docker-compose restart nodered",
+    "docker:install-module": "npm run docker:stop-nodered && rm -rf misc/data && npm run docker:start-nodered && ./misc/install-module.sh",
+    "docker:restart-nodered-on-change": "nodemon -e html,js,json,css --exec 'npm run copy-files && cd misc && npm run docker:restart-nodered && docker logs -f nodered'",
+    "cypress:web": "npx cypress open",
+    "cypress:headless": "npx cypress run --browser electron"
   },
   "author": "erickwendel",
   "keywords": [
@@ -32,10 +36,12 @@
   "license": "ISC",
   "description": "",
   "devDependencies": {
+    "cypress": "^13.13.1",
     "node-red-node-test-helper": "^0.3.4"
   },
   "dependencies": {
     "@googleapis/sheets": "^9.0.0",
-    "google-auth-library": "^9.11.0"
+    "google-auth-library": "^9.11.0",
+    "node-red-project": "file:misc/data"
   }
 }

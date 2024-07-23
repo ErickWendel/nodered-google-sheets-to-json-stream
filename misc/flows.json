@@ -1,0 +1,54 @@
+[
+    {
+        "id": "3ad28ab04045ad3c",
+        "type": "http in",
+        "z": "137a343fe9d8bb9c",
+        "name": "",
+        "url": "/sheets",
+        "method": "get",
+        "upload": false,
+        "swaggerDoc": "",
+        "x": 190,
+        "y": 60,
+        "wires": [
+            [
+                "5aa3eb95d7583393"
+            ]
+        ]
+    },
+    {
+        "id": "5aa3eb95d7583393",
+        "type": "sheets-to-json-stream",
+        "z": "137a343fe9d8bb9c",
+        "config": "222c4c34e4214670",
+        "sheetId": "1Mte7nOo6oqvI4me-tnEenCci0l8bR04810B_q1U_1Ro",
+        "sheetList": "co producao",
+        "sheetListValues": "[{\"text\":\"co producao\",\"value\":\"co producao\",\"selected\":true},{\"text\":\"Sheet2\",\"value\":\"Sheet2\",\"selected\":false}]",
+        "range": "A1:AZ2279",
+        "columns": "[\"coproducerName\",\"coproducerDocument\",\"coproducerCPF\",\"coproducerEmail\",\"ID da venda\",\"Status\",\"Produto\",\"Cliente\",\"Email\",\"CPF\",\"Celular\",\"IP\",\"instagram\",\"Endereço\",\"Numero\",\"Complemento\",\"Bairro\",\"Cidade\",\"Estado\",\"CEP\",\"País\",\"Status do recebimento\",\"Data de liberação estimada\",\"Data de Depósito\",\"Parcelas\",\"Últimos dígitos do Cartão\",\"Tipo\",\"Moeda\",\"Valor líquido\",\"Taxas\",\"Preço base do produto\",\"Total com acréscimo\",\"Oferta\",\"Pagamento\",\"Motivo da recusa\",\"Tracking src\",\"Tracking sck\",\"Tracking utm_source\",\"Tracking utm_medium\",\"Tracking utm_campaign\",\"Tracking utm_content\",\"Tracking utm_term\",\"Data de Criação\",\"Data de Atualização\",\"ID Nota fiscal\",\"Status Nota fiscal\",\"Nota fisca emitada por\",\"Software Nota fiscal\",\"Kiwify Network\",\"Provedor de One Click\",\"Coupon Code\",\"Discount Percentage\"]",
+        "name": "",
+        "x": 340,
+        "y": 140,
+        "wires": [
+            [
+                "03add7ebfe2d3474"
+            ]
+        ]
+    },
+    {
+        "id": "03add7ebfe2d3474",
+        "type": "http response",
+        "z": "137a343fe9d8bb9c",
+        "name": "",
+        "statusCode": "",
+        "headers": {},
+        "x": 580,
+        "y": 140,
+        "wires": []
+    },
+    {
+        "id": "222c4c34e4214670",
+        "type": "gauth",
+        "name": "nodered@ew-academy.iam.gserviceaccount.com"
+    }
+]
