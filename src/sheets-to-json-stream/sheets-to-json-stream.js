@@ -71,7 +71,6 @@ class SheetsToJSON {
      * @yields {Promise<Object>} - A promise that resolves to the sheet data.
      */
     async *consumeSheetOnDemand({ spreadsheetId, range, sheetMetadata }) {
-        const totalRows = sheetMetadata.rowCount;
 
         const match = range.match(/([A-Z]+)(\d*):([A-Z]+)(\d*)/);
         if (!match) {
@@ -81,7 +80,7 @@ class SheetsToJSON {
         const startColumn = match[1];
         const startRow = parseInt(match[2], 10) || 1;
         const endColumn = match[3];
-        const endRow = parseInt(match[4], 10) || totalRows;
+        const endRow = parseInt(match[4], 10);
 
         let rangeStart = startRow;
         let moreData = true;
@@ -229,8 +228,8 @@ module.exports = function main(RED) {
             config: ctx.config,
         };
 
-        let sheetMetadata;
-        (async () => {
+        async function refreshMetadata() {
+            let sheetMetadata;
             const metadata = sheetsToJSON.metadata.get(context.spreadsheetId);
             if (metadata) {
                 sheetMetadata = metadata.sheets.find(item => item.title === context.sheetTitle);
@@ -241,10 +240,44 @@ module.exports = function main(RED) {
                 const metadata = await sheetsToJSON.fetchSheetsMetadata(creds, context.spreadsheetId);
                 sheetMetadata = metadata.sheets.find(item => item.title === context.sheetTitle);
             }
-        })();
+            return sheetMetadata
+        }
+
+        function configureProgress(node, range) {
+            const match = range.match(/([A-Z]+)(\d*):([A-Z]+)(\d*)/);
+
+            const startRow = parseInt(match[2], 10);
+            const endRow = parseInt(match[4], 10);
+            const totalLines = endRow - startRow;
+            let processedRows = totalLines
+
+            return {
+                update() {
+                    --processedRows;
+
+                    const missingLines = totalLines - processedRows;
+                    const color = missingLines === totalLines ? 'green' : 'blue'
+
+                    node.status({
+                        fill: color,
+                        shape: "dot",
+                        text: `${missingLines}/${totalLines}`
+                    });
+                }
+            }
+        }
+
+        node.status({
+            fill: 'blue',
+            shape: "dot",
+            text: `trigger to start!`
+        });
 
         node.on('input', async function (msg) {
             try {
+                const sheetMetadata = await refreshMetadata()
+                const progress = configureProgress(node, context.range)
+
                 const stream = sheetsToJSON.consumeSheetOnDemand({
                     spreadsheetId: context.spreadsheetId,
                     range: context.range,
@@ -267,15 +300,20 @@ module.exports = function main(RED) {
                             lineItem[headerName] = line[indexLine];
                         }
 
-                        node.send({ payload: lineItem });
+                        node.send({
+                            ...msg,
+                            payload: lineItem,
+                        });
+                        progress.update()
                     }
                 }
             } catch (error) {
                 console.log('error', error);
-                node.send({ payload: 'error' });
+                node.send({
+                    ...msg,
+                    payload: error
+                });
             }
-
-            node.send(msg);
         });
 
         node.on('close', async function () {
