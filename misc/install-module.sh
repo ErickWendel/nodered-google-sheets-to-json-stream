@@ -17,6 +17,7 @@ if [ $? -ne 0 ]; then
 fi
 
 # cp misc/flows.json misc/data/flows.json
+cp misc/settings.js misc/data/settings.js
 
 # Change directory to misc/data
 cd misc/data || exit 1
