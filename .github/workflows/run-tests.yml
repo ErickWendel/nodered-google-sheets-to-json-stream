@@ -1,0 +1,39 @@
+name: Cypress Tests - Complete Project
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - '**.js'
+      - '**.json'
+      - '**.yml'
+
+jobs:
+  setup-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Set up Docker Compose
+      run: |
+        sudo rm /usr/local/bin/docker-compose
+        curl -L "https://github.com/docker/compose/releases/download/1.29.2/docker-compose-$(uname -s)-$(uname -m)" -o /tmp/docker-compose
+        chmod +x /tmp/docker-compose
+        sudo mv /tmp/docker-compose /usr/local/bin/docker-compose
+
+    - name: Use Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: 20
+
+    - name: Start nodered
+      run: npm run docker:install-module
+
+    - run: npm ci
+    - run: npm run cypress:headless
+
+    - name: Clean up
+      run: docker-compose down --volumes
