@@ -78,7 +78,7 @@ async function insertNodes(nodes) {
     });
 }
 
-const NODERED_URL = 'http://0.0.0.0:1880'
+const NODERED_URL = 'http://localhost:1880'
 // Usage in a test case
 describe('Node-RED Interface', () => {
     async function addNodeAndOpen(editor, nodeName) {
@@ -121,6 +121,7 @@ describe('Node-RED Interface', () => {
         await editor.elements.closeButton().click()
 
         await page.locator(`#${sheetsToJsonStreamNode.id}`).dblclick();
+        await page.waitForTimeout(1000);
 
         await addValidConfig(editor);
 
