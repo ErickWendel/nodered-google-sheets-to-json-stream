@@ -41,7 +41,6 @@
   },
   "dependencies": {
     "@googleapis/sheets": "^9.0.0",
-    "google-auth-library": "^9.11.0",
-    "node-red-project": "file:misc/data"
+    "google-auth-library": "^9.11.0"
   }
 }

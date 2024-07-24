@@ -28,7 +28,7 @@ jobs:
       with:
         node-version: 20
 
-    - run: npm install
+    - run: npm ci
 
     - name: Start nodered
       run: npm run docker:install-module
