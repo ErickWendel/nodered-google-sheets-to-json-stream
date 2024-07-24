@@ -26,7 +26,7 @@ class NodeRedEditor {
             urlInput: () => this.page.locator('#node-input-url')
         },
         workspaceArea: () => this.page.locator('#red-ui-workspace-chart'),
-        closeButton: () => this.page.getByRole('button', { name: 'Close' })
+        closeButton: () => this.page.getByRole('button', { name: 'Close' }).first()
 
     }
 }
