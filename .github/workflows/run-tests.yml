@@ -31,8 +31,10 @@ jobs:
     - name: Start nodered
       run: npm run docker:install-module
 
-    - name: Install Playwright Browsers
-      run: npx playwright install --with-deps
+    - name: Install Chromium browser only
+      run: |
+        export PLAYWRIGHT_BROWSERS_PATH=0
+        npx playwright install chromium --with-deps
 
     - name: Run Playwright tests
       run: npx playwright test

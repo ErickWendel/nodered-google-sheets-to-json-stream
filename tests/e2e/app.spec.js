@@ -124,6 +124,7 @@ describe('Node-RED Interface', () => {
         // await editor.elements.closeButton().click()
 
         await page.locator(`#${sheetsToJsonStreamNode.id}`).dblclick();
+        await page.waitForTimeout(200);
 
         await addValidConfig(editor);
 
