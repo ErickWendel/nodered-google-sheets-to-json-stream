@@ -33,7 +33,7 @@ jobs:
       run: npm run docker:install-module
 
     - name: Show package
-      run: docker exec -it nodered sh -c 'ls -la /data/node_modules/@erickwendel'
+      run: docker exec -it nodered sh -c 'ls /data/node_modules'
 
     - name: Restore dependencies
       run: npm ci

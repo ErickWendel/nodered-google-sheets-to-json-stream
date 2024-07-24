@@ -9,18 +9,28 @@ if [ $? -ne 0 ]; then
     exit 1
 fi
 
-# Move the package to misc/data
+# Move the package to the Docker container
 docker cp $PACKAGE nodered:/data/
 if [ $? -ne 0 ]; then
-    echo "Error: Failed to move $PACKAGE to misc/data"
+    echo "Error: Failed to move $PACKAGE to /data in the container"
     exit 1
 fi
 
+# Move the settings file to the Docker container
 docker cp misc/settings.js nodered:/data/settings.js
+if [ $? -ne 0 ]; then
+    echo "Error: Failed to move settings.js to /data in the container"
+    exit 1
+fi
 
+# Install the package inside the Docker container
 docker exec -it nodered sh -c "cd /data && npm install $PACKAGE --legacy-peer-deps --omit=dev"
+if [ $? -ne 0 ]; then
+    echo "Error: Failed to install $PACKAGE in the container"
+    exit 1
+fi
 
-# Restart Node-RED
+# Restart Node-RED using your custom script
 npm run docker:restart-nodered
 if [ $? -ne 0 ]; then
     echo "Error: Failed to restart Node-RED"
