@@ -8,6 +8,7 @@ on:
       - '**.js'
       - '**.json'
       - '**.yml'
+      - '**.sh'
 
 jobs:
   setup-and-test:
