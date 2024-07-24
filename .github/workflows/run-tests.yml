@@ -31,13 +31,16 @@ jobs:
         sudo mv /tmp/docker-compose /usr/local/bin/docker-compose
 
     - name: Start nodered
-      run: npm run docker:install-module
+      run: npm run docker:start-nodered
 
     - name: Restore dependencies
       run: npm ci
 
     - name: Install Chromium browser only
       run: npx playwright install chromium --with-deps
+
+    - name: install nodered custom module
+      run: npm run docker:install-module
 
     - name: Run Playwright tests
       run: npm run playwright:headless
