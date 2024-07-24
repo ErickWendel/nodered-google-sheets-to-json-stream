@@ -28,10 +28,11 @@ jobs:
       with:
         node-version: 20
 
+    - run: npm ci
+
     - name: Start nodered
       run: npm run docker:install-module
 
-    - run: npm ci
     - run: npm run cypress:headless
 
     - name: Clean up
