@@ -28,6 +28,7 @@ jobs:
       with:
         node-version: 20
 
+    - run: rm *.tgz
     - run: npm ci
 
     - name: Start nodered
