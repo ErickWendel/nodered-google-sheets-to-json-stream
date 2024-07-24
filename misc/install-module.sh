@@ -24,7 +24,11 @@ if [ $? -ne 0 ]; then
 fi
 
 # Install the package inside the Docker container
-docker exec -it nodered sh -c "cd /data && npm install $PACKAGE --legacy-peer-deps --omit=dev"
+docker exec nodered sh -c "cd /data && npm install $PACKAGE --legacy-peer-deps --omit=dev"
+if [ $? -ne 0 ]; then
+    echo "Error: Failed to install $PACKAGE in the container"
+    exit 1
+fi
 
 # Restart Node-RED using your custom script
 npm run docker:restart-nodered
@@ -33,6 +37,11 @@ if [ $? -ne 0 ]; then
     exit 1
 fi
 
-docker exec -it nodered sh -c 'ls /data/node_modules/@erickwendel'
+# Verify installation
+docker exec nodered sh -c 'ls /data/node_modules/@erickwendel'
+if [ $? -ne 0 ]; then
+    echo "Error: Module was not installed correctly"
+    exit 1
+fi
 
 echo "Module installed and Node-RED restarted successfully."
