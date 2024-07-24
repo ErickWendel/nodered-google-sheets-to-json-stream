@@ -25,10 +25,6 @@ fi
 
 # Install the package inside the Docker container
 docker exec -it nodered sh -c "cd /data && npm install $PACKAGE --legacy-peer-deps --omit=dev"
-if [ $? -ne 0 ]; then
-    echo "Error: Failed to install $PACKAGE in the container"
-    exit 1
-fi
 
 # Restart Node-RED using your custom script
 npm run docker:restart-nodered
