@@ -33,4 +33,6 @@ if [ $? -ne 0 ]; then
     exit 1
 fi
 
+docker exec -it nodered sh -c 'ls /data/node_modules/@erickwendel'
+
 echo "Module installed and Node-RED restarted successfully."
