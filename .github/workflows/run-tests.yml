@@ -1,4 +1,4 @@
-name: Cypress Tests - Complete Project
+name: Nodered - Complete Project
 
 on:
   push:
@@ -12,8 +12,6 @@ on:
 jobs:
   setup-and-test:
     runs-on: ubuntu-latest
-    volumes:
-        - misc:/misc
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
@@ -37,4 +35,4 @@ jobs:
     - run: npm run cypress:headless
 
     - name: Clean up
-      run: docker-compose down --volumes
+      run: docker-compose down
