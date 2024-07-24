@@ -121,7 +121,7 @@ describe('Node-RED Interface', () => {
 
         await page.goto(NODERED_URL);
 
-        await editor.elements.closeButton().click()
+        // await editor.elements.closeButton().click()
 
         await page.locator(`#${sheetsToJsonStreamNode.id}`).dblclick();
 
