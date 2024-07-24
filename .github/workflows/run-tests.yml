@@ -28,8 +28,7 @@ jobs:
       with:
         node-version: 20
 
-    - run: rm *.tgz
-    - run: npm ci
+    - run: npm install
 
     - name: Start nodered
       run: npm run docker:install-module
