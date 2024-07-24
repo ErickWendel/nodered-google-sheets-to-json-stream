@@ -53,4 +53,4 @@ jobs:
         retention-days: 30
 
     - name: Clean up
-      run: docker-compose down --volumes
+      run: npm run docker:clean

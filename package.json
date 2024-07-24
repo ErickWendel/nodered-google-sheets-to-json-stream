@@ -10,6 +10,7 @@
     "copy-files": "rsync -av --exclude='node_modules' --include='*.html' --include='*.js' --include='*.json' --include='*/' --exclude='*' ./ misc/data/node_modules/@erickwendel/nodered-sheets-to-json-stream",
     "docker:start-nodered": "cd misc && docker-compose up -d",
     "docker:stop-nodered": "cd misc && docker-compose down",
+    "docker:clean": "cd misc && docker-compose down --volumes",
     "docker:restart-nodered": "cd misc && docker-compose restart nodered",
     "docker:install-module": "./misc/install-module.sh",
     "docker:restart-nodered-on-change": "nodemon -e html,js,json,css --exec 'npm run copy-files && cd misc && npm run docker:restart-nodered && docker logs -f nodered'",

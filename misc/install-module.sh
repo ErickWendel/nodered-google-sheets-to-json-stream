@@ -1,7 +1,5 @@
 #!/bin/bash
 
-docker ps
-
 # Pack the module and capture the package name
 PACKAGE=$(npm pack | tail -n 1)
 
