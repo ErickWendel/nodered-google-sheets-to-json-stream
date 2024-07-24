@@ -10,27 +10,18 @@ if [ $? -ne 0 ]; then
 fi
 
 # Move the package to misc/data
-mv $PACKAGE misc/data/
+docker cp $PACKAGE nodered:/data/
 if [ $? -ne 0 ]; then
     echo "Error: Failed to move $PACKAGE to misc/data"
     exit 1
 fi
 
 # cp misc/flows.json misc/data/flows.json
-cp misc/settings.js misc/data/settings.js
-
-# Change directory to misc/data
-cd misc/data || exit 1
+docker cp misc/settings.js nodered:/data/settings.js
 
 # Install the packed module
-npm install $PACKAGE --legacy-peer-deps
-if [ $? -ne 0 ]; then
-    echo "Error: Failed to install $PACKAGE"
-    exit 1
-fi
-
-# Change directory back to the root of the project
-cd ../.. || exit 1
+# Install the packed module in the /data folder
+docker exec -it nodered sh -c "cd /data && npm install $PACKAGE --legacy-peer-deps --omit=dev"
 
 # Restart Node-RED
 npm run docker:restart-nodered
