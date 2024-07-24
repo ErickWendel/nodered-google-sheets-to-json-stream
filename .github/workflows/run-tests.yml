@@ -16,8 +16,11 @@ jobs:
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
+
+    - name: Use Node.js
+      uses: actions/setup-node@v4
       with:
-        node-version: lts/*
+        node-version: 20
 
     - name: Set up Docker Compose
       run: |
@@ -26,16 +29,17 @@ jobs:
         chmod +x /tmp/docker-compose
         sudo mv /tmp/docker-compose /usr/local/bin/docker-compose
 
-    - run: npm ci
-
     - name: Start nodered
       run: npm run docker:install-module
+
+    - name: Restore dependencies
+      run: npm ci
 
     - name: Install Chromium browser only
       run: npx playwright install chromium --with-deps
 
     - name: Run Playwright tests
-      run: npx playwright test --project chromium
+      run: npm run playwright:headless
 
     - uses: actions/upload-artifact@v4
       if: always()

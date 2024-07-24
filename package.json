@@ -9,12 +9,12 @@
     "start": "node sheets-to-json-stream.js",
     "copy-files": "rsync -av --exclude='node_modules' --include='*.html' --include='*.js' --include='*.json' --include='*/' --exclude='*' ./ misc/data/node_modules/@erickwendel/nodered-sheets-to-json-stream",
     "docker:start-nodered": "cd misc && docker-compose up -d",
-    "docker:stop-nodered": "cd misc && docker-compose down",
-    "docker:restart-nodered": "cd misc && docker-compose restart nodered",
-    "docker:install-module": "npm run docker:stop-nodered && npm run docker:start-nodered && ./misc/install-module.sh",
+    "docker:stop-nodered": "docker stop nodered",
+    "docker:restart-nodered": "docker restart nodered",
+    "docker:install-module": "npm run docker:start-nodered && ./misc/install-module.sh",
     "docker:restart-nodered-on-change": "nodemon -e html,js,json,css --exec 'npm run copy-files && cd misc && npm run docker:restart-nodered && docker logs -f nodered'",
-    "npx playwright:web": "npx playwright test --ui --debug",
-    "npx playwright:headless": "npx playwright test"
+    "playwright:web": "npx playwright test --ui --debug",
+    "playwright:headless": "npx playwright test"
   },
   "author": "erickwendel",
   "keywords": [
