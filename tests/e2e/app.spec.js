@@ -92,16 +92,9 @@ describe('Node-RED Interface', () => {
     }
 
     async function addValidConfig(editor) {
-        try {
-            await editor.elements.sheetsToJSON.addNewConfigInputBtn().click();
-            await editor.elements.sheetsToJSON.gAuth.configArea().fill(JSON.stringify(spreadsheet.googleAuthCredentials));
-            await editor.elements.sheetsToJSON.gAuth.configArea().press('Meta+Enter');
-        } catch (error) {
-            await editor.elements.sheetsToJSON.addNewConfigInputBtn().click();
-            await editor.elements.sheetsToJSON.gAuth.configArea().fill(JSON.stringify(spreadsheet.googleAuthCredentials));
-            await editor.elements.sheetsToJSON.gAuth.configArea().press('Meta+Enter');
-        }
-
+        await editor.elements.sheetsToJSON.addNewConfigInputBtn().click();
+        await editor.elements.sheetsToJSON.gAuth.configArea().fill(JSON.stringify(spreadsheet.googleAuthCredentials));
+        await editor.elements.sheetsToJSON.gAuth.configArea().press('Meta+Enter');
     }
 
     async function resetChart(editor) {

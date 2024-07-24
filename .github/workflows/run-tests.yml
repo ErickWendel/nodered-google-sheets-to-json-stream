@@ -32,14 +32,14 @@ jobs:
     - name: Start nodered
       run: npm run docker:install-module
 
+    - name: Show package
+      run: docker exec -it nodered sh -c 'ls -la /data/node_modules/@erickwendel'
+
     - name: Restore dependencies
       run: npm ci
 
     - name: Install Chromium browser only
       run: npx playwright install chromium --with-deps
-
-    - name: Log for debug
-      run: docker logs nodered
 
     - name: Run Playwright tests
       run: npm run playwright:headless
@@ -52,4 +52,4 @@ jobs:
         retention-days: 30
 
     - name: Clean up
-      run: docker-compose down
+      run: docker-compose down --volumes

@@ -16,11 +16,8 @@ if [ $? -ne 0 ]; then
     exit 1
 fi
 
-# cp misc/flows.json misc/data/flows.json
 docker cp misc/settings.js nodered:/data/settings.js
 
-# Install the packed module
-# Install the packed module in the /data folder
 docker exec -it nodered sh -c "cd /data && npm install $PACKAGE --legacy-peer-deps --omit=dev"
 
 # Restart Node-RED
