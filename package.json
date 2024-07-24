@@ -14,7 +14,7 @@
     "docker:install-module": "npm run docker:stop-nodered && npm run docker:start-nodered && ./misc/install-module.sh",
     "docker:restart-nodered-on-change": "nodemon -e html,js,json,css --exec 'npm run copy-files && cd misc && npm run docker:restart-nodered && docker logs -f nodered'",
     "npx playwright:web": "npx playwright test --ui --debug",
-    "npx playwright:headless": "px playwright test"
+    "npx playwright:headless": "npx playwright test"
   },
   "author": "erickwendel",
   "keywords": [
