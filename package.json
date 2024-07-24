@@ -13,8 +13,8 @@
     "docker:restart-nodered": "cd misc && docker-compose restart nodered",
     "docker:install-module": "npm run docker:stop-nodered && npm run docker:start-nodered && ./misc/install-module.sh",
     "docker:restart-nodered-on-change": "nodemon -e html,js,json,css --exec 'npm run copy-files && cd misc && npm run docker:restart-nodered && docker logs -f nodered'",
-    "cypress:web": "npx cypress open",
-    "cypress:headless": "npx cypress run --browser electron"
+    "npx playwright:web": "npx playwright test --ui --debug",
+    "npx playwright:headless": "px playwright test"
   },
   "author": "erickwendel",
   "keywords": [
@@ -37,7 +37,9 @@
   "license": "ISC",
   "description": "",
   "devDependencies": {
-    "cypress": "^13.13.1"
+    "@playwright/test": "^1.45.3",
+    "@types/node": "^20.14.12",
+    "playwright": "^1.45.3"
   },
   "dependencies": {
     "@googleapis/sheets": "^9.0.0",
