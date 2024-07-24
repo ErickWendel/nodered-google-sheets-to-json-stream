@@ -6,4 +6,7 @@ services:
     ports:
       - 1880:1880
     volumes:
-      - ./data:/data
+      - nodered_data:/data
+
+volumes:
+  nodered_data:
