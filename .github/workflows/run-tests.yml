@@ -33,9 +33,6 @@ jobs:
     - name: Start nodered
       run: npm run docker:install-module
 
-    - name: Show package
-      run: docker exec -it nodered sh -c 'ls /data/node_modules'
-
     - name: Restore dependencies
       run: npm ci
 
