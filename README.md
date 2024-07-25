@@ -1,6 +1,6 @@
 # nodered-google-sheets-to-json-stream
 
-[![Build Status](https://github.com/ErickWendel/nodered-google-sheets-to-json-stream/workflows/Nodered%20-%20Complete%20Project/badge.svg)](https://github.com/ErickWendel/nodered-google-sheets-to-json-stream/actions)
+[![Build Status](https://github.com/ErickWendel/nodered-google-sheets-to-json-stream/workflows/Nodered%20Google%20Sheets%20to%20JSON%20Stream/badge.svg)](https://github.com/ErickWendel/nodered-google-sheets-to-json-stream/actions)
 
 This Node-RED custom node provides a Knex instance for DB connections. (currently only working with Postgres)
 

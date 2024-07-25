@@ -1,5 +1,4 @@
-name: Nodered - Complete Project
-
+name: Nodered Google Sheets to JSON Stream
 on:
   push:
     branches:
