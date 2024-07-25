@@ -1,18 +1,31 @@
-
 const net = require('net');
+
 function createTCPClient({ timeout, port }) {
     return new Promise((resolve, reject) => {
         const client = net.createConnection({ port }, () => {
             client.write('hey');
         });
 
-        setTimeout(() => client.end(), timeout)
+        const responses = [];
+        let buffer = '';
 
-        const responses = []
         client.on('data', (data) => {
-            const msg = data.toString().trim().split('\n').map(line => JSON.parse(line))
-            responses.push(...msg)
+            buffer += data.toString();
+            let boundary = buffer.indexOf('\n');
+            while (boundary !== -1) {
+                const line = buffer.substring(0, boundary).trim();
+                try {
+                    const parsed = JSON.parse(line);
+                    responses.push(parsed);
+                } catch (err) {
+                    console.error('Failed to parse JSON:', err);
+                }
+                buffer = buffer.substring(boundary + 1);
+                boundary = buffer.indexOf('\n');
+            }
         });
+
+        setTimeout(() => client.end(), timeout);
 
         client.on('end', () => {
             return resolve(responses);
@@ -25,4 +38,4 @@ function createTCPClient({ timeout, port }) {
     });
 }
 
-module.exports = createTCPClient
+module.exports = createTCPClient;

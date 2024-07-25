@@ -39,6 +39,7 @@ describe('Node-RED Interface', () => {
 
             await test.step('When I reload the home page', async () => {
                 await page.goto(NODERED_URL);
+                // await page.waitForTimeout(3000);
             });
 
             await test.step('And I add a valid Google authentication configuration', async () => {
