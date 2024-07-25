@@ -8,7 +8,7 @@ services:
       - 6123:6123 # used for communicating via TCP on e2e tests
     volumes:
       - nodered_data:/data
-      - ./data:/data
+      # - ./data:/data
 
 volumes:
   nodered_data:
