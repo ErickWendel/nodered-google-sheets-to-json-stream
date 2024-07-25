@@ -1,8 +1,8 @@
 // @ts-check
 
 const spreadsheet = require('../../spreadsheet.json');
-const { test: it, expect } = require('@playwright/test')
-const { describe, beforeEach } = it;
+const { test, expect } = require('@playwright/test')
+const { describe, beforeEach } = test;
 class NodeRedEditor {
     constructor({ page }) {
         this.page = page
@@ -106,41 +106,67 @@ describe('Node-RED Interface', () => {
     }
 
     beforeEach(async ({ page }) => {
-        const editor = new NodeRedEditor({ page });
-        await page.goto(NODERED_URL);
-
-        await resetChart(editor);
+        return test.step('Given a clean nodered instance', async () => {
+            const editor = new NodeRedEditor({ page });
+            await page.goto(NODERED_URL);
+            await resetChart(editor);
+        })
     })
 
-    it('should create a flow with an API and setup sheets', async ({ page }) => {
-        const editor = new NodeRedEditor({ page });
-        await insertNodes([httpInNode, sheetsToJsonStreamNode, httpResponseNode]);
 
-        await page.goto(NODERED_URL);
+    describe('should create a flow with an API and setup sheets', () => {
+        test('Use case: Successfuly configure node ', async ({ page }) => {
 
-        await editor.elements.closeButton().click()
+            const editor = new NodeRedEditor({ page });
 
-        await page.locator(`#${sheetsToJsonStreamNode.id}`).dblclick();
+            await test.step('Given a web API flow is available', async () => {
+                await insertNodes([httpInNode, sheetsToJsonStreamNode, httpResponseNode]);
+            });
 
-        await addValidConfig(editor);
+            await test.step('When I reload the home page', async () => {
+                await page.goto(NODERED_URL);
+            });
 
-        await editor.elements.sheetsToJSON.sheetIdInput().type(spreadsheet.spreadsheetId);
-        await editor.elements.sheetsToJSON.sheetIdInput().press('Enter');
-        await page.waitForTimeout(3000);
+            await test.step('And I close the flow warning', async () => {
+                await editor.elements.closeButton().click();
+            });
 
-        const selectElement = await editor.elements.sheetsToJSON.sheetListInput()
-        const options = await selectElement.evaluate((select) => {
-            return Array.from(select.options).map(option => option.value);
-        });
+            await test.step('And I add a valid Google authentication configuration', async () => {
+                await page.locator(`#${sheetsToJsonStreamNode.id}`).dblclick();
+                await addValidConfig(editor);
+            });
 
-        expect(options).toStrictEqual(spreadsheet.sheets);
+            await test.step(`And I enter the spreadsheet ID "${spreadsheet.spreadsheetId}" and leave the input field`, async () => {
+                await editor.elements.sheetsToJSON.sheetIdInput().type(spreadsheet.spreadsheetId);
+                await editor.elements.sheetsToJSON.sheetIdInput().press('Tab');
+                await page.waitForTimeout(3000);
+            });
 
-        await expect(editor.elements.sheetsToJSON.rangeInput()).toHaveValue(spreadsheet.range);
-        await expect(editor.elements.sheetsToJSON.columnsInput()).toHaveValue(JSON.stringify(spreadsheet.columns));
-        await editor.elements.inputLabel().press('Meta+Enter');
-        await editor.elements.workspaceArea().click()
-        await editor.elements.workspaceArea().press('Meta+d')
+            await test.step('Then I should see the list of sheets in the select element', async () => {
+                const selectElement = await editor.elements.sheetsToJSON.sheetListInput();
+                const options = await selectElement.evaluate((select) => {
+                    return Array.from(select.options).map(option => option.value);
+                });
+
+                expect(options).toStrictEqual(spreadsheet.sheets);
+            });
+
+            await test.step(`And I should see the sheet's columns as an array`, async () => {
+                await expect(editor.elements.sheetsToJSON.columnsInput()).toHaveValue(JSON.stringify(spreadsheet.columns));
+            });
+
+            await test.step(`And the sheet's range should contain "${spreadsheet.range}"`, async () => {
+                await expect(editor.elements.sheetsToJSON.rangeInput()).toHaveValue(spreadsheet.range);
+            });
+
+            await test.step('And I can deploy Node-RED without errors', async () => {
+                await editor.elements.inputLabel().press('Meta+Enter');
+                await editor.elements.workspaceArea().click();
+                await editor.elements.workspaceArea().press('Meta+d');
+            });
+        })
     });
+
 
     // it('manually create the sheet node in the editor', async ({ page }) => {
     //     const editor = new NodeRedEditor({ page });
