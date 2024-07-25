@@ -78,10 +78,10 @@ function SheetsToJSONModule(RED, sheetsToJSON) {
                 _isProcessing = false;
 
             } catch (error) {
-                console.log('Error', error);
+                console.log('Error', error.stack);
                 node.send({
                     ...msg,
-                    payload: error
+                    payload: error.stack
                 });
                 _isProcessing = false;
                 reportErrorStatus("Error")
