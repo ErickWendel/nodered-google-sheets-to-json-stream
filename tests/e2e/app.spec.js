@@ -10,8 +10,8 @@ const NodeRedEditor = require('./util/editorElements');
 
 const NODERED_URL = 'http://localhost:1880'
 const TCP_PORT = 3000
-
-
+const { version } = require('os')
+const metaKey = version().includes('Darwin') ? 'Meta' : 'Control'
 // Usage in a test case
 describe('Node-RED Interface', () => {
 
@@ -78,9 +78,9 @@ describe('Node-RED Interface', () => {
             });
 
             await test.step('And I can deploy Node-RED without errors', async () => {
-                await editor.elements.inputLabel().press('Meta+Enter');
+                await editor.elements.inputLabel().press(metaKey + '+Enter');
                 await editor.elements.workspaceArea().click();
-                await editor.elements.workspaceArea().press('Meta+d');
+                await editor.elements.workspaceArea().press(metaKey + '+d');
             });
         })
 
@@ -136,13 +136,13 @@ describe('Node-RED Interface', () => {
 
                 await range.type(rangeOfTwoLines)
                 await range.press('Enter')
-                await range.press('Meta+Enter');
+                await range.press(metaKey + '+Enter');
             });
 
             await test.step('And I can deploy Node-RED without errors', async () => {
                 await editor.elements.workspaceArea().click();
                 await expect(editor.elements.workspaceArea()).toBeVisible()
-                await editor.elements.workspaceArea().press('Meta+d');
+                await editor.elements.workspaceArea().press(metaKey + '+d');
             });
 
             await test.step('And I can receive two messages with correct columns', async () => {

@@ -1,4 +1,7 @@
 // @ts-check
+const { version } = require('os')
+
+const metaKey = version().includes('Darwin') ? 'Meta' : 'Control'
 
 class NodeRedEditor {
     constructor({ page }) {
@@ -43,14 +46,14 @@ class NodeRedEditor {
         await configBtn.click();
 
         await this.elements.sheetsToJSON.gAuth.configArea().fill(JSON.stringify(googleAuthCredentials));
-        await this.elements.sheetsToJSON.gAuth.configArea().press('Meta+Enter');
+        await this.elements.sheetsToJSON.gAuth.configArea().press(metaKey + '+Enter');
     }
 
     async resetChart() {
         await this.elements.workspaceArea().focus()
-        await this.elements.workspaceArea().press('Meta+a');
+        await this.elements.workspaceArea().press(metaKey + '+a');
         await this.elements.workspaceArea().press('Delete');
-        await this.elements.workspaceArea().press('Meta+d');
+        await this.elements.workspaceArea().press(metaKey + '+d');
     }
 }
 
