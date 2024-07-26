@@ -7,10 +7,9 @@ const { describe, beforeEach } = test;
 const { generateFlow, insertNodes } = require('./util/nodered');
 const createTCPClient = require('./util/tcp-client');
 const NodeRedEditor = require('./util/editorElements');
-const { afterEach } = require('node:test');
 
 const NODERED_URL = 'http://localhost:1880'
-const TCP_PORT = 6123
+const TCP_PORT = 3000
 
 
 // Usage in a test case

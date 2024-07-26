@@ -5,7 +5,7 @@ services:
     image: nodered/node-red:latest-22
     ports:
       - 1880:1880
-      - 6123:6123 # used for communicating via TCP on e2e tests
+      - 3000:3000 # used for communicating via TCP on e2e tests
     volumes:
       - nodered_data:/data
       # - ./data:/data
