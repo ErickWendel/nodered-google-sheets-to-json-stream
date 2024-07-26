@@ -1,3 +1,5 @@
+// @ts-check
+
 class NodeRedEditor {
     constructor({ page }) {
         this.page = page
@@ -35,7 +37,11 @@ class NodeRedEditor {
     }
 
     async addValidConfig(googleAuthCredentials) {
-        await this.elements.sheetsToJSON.addNewConfigInputBtn().click();
+        const configBtn = await this.elements.sheetsToJSON.addNewConfigInputBtn()
+        await configBtn.waitFor()
+
+        await configBtn.click();
+
         await this.elements.sheetsToJSON.gAuth.configArea().fill(JSON.stringify(googleAuthCredentials));
         await this.elements.sheetsToJSON.gAuth.configArea().press('Meta+Enter');
     }

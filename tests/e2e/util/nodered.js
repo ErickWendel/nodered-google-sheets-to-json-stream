@@ -1,7 +1,8 @@
+const generateRandomId = () => 'node-' + Math.random().toString(36).substr(2, 9);
+
+const generateRandomName = (base, id) => base + '-' + id;
 function generateFlow({ tcpPort }) {
     // Generate unique IDs and names for the nodes
-    const generateRandomId = () => 'node-' + Math.random().toString(36).substr(2, 9);
-    const generateRandomName = (base, id) => base + '-' + id;
 
     const tcpInNodeId = generateRandomId();
     const sheetsToJsonStreamNodeId = generateRandomId();
