@@ -126,7 +126,7 @@ describe('Node-RED Interface', () => {
                 expect(options).toStrictEqual(spreadsheet.sheets);
             });
 
-            await test.step(`And I manually choose range as ${rangeOfTwoLines}`, async () => {
+            await test.step(`And I manually choose range as ${rangeOfTwoLines} and save`, async () => {
                 const range = editor.elements.sheetsToJSON.rangeInput()
                 await expect(range).toBeEnabled()
                 await range.focus()
@@ -134,13 +134,14 @@ describe('Node-RED Interface', () => {
                 await range.press('Meta+A')
                 await range.press('Delete')
                 await range.type(rangeOfTwoLines)
+                await range.press('Enter')
+                await range.press('Meta+Enter');
             });
 
             await test.step('And I can deploy Node-RED without errors', async () => {
-                await editor.elements.inputLabel().press('Meta+Enter');
                 await editor.elements.workspaceArea().click();
-                await editor.elements.workspaceArea().press('Meta+d');
                 await expect(editor.elements.workspaceArea()).toBeVisible()
+                await editor.elements.workspaceArea().press('Meta+d');
             });
 
             await test.step('And I can receive two messages with correct columns', async () => {
@@ -148,15 +149,13 @@ describe('Node-RED Interface', () => {
                 await page.waitForTimeout(1000)
 
                 const receivedItems = await createTCPClient({ timeout: 1000, port: TCP_PORT })
-                console.log(receivedItems)
-
+                expect(receivedItems.length).toBe(2)
 
                 for (const item of receivedItems) {
                     for (const colum of spreadsheet.columns) {
                         expect(item).toHaveProperty(colum)
                     }
                 }
-                expect(receivedItems.length).toBe(2)
             })
         })
     });
