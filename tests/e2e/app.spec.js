@@ -148,13 +148,15 @@ describe('Node-RED Interface', () => {
                 await page.waitForTimeout(1000)
 
                 const receivedItems = await createTCPClient({ timeout: 1000, port: TCP_PORT })
-                expect(receivedItems.length).toBe(2)
+                console.log(receivedItems)
+
 
                 for (const item of receivedItems) {
                     for (const colum of spreadsheet.columns) {
                         expect(item).toHaveProperty(colum)
                     }
                 }
+                expect(receivedItems.length).toBe(2)
             })
         })
     });
