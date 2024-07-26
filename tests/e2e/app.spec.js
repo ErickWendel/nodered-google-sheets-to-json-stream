@@ -2,9 +2,9 @@
 
 const spreadsheet = require('../../spreadsheet.json');
 const { test, expect } = require('@playwright/test')
-const { describe, beforeEach } = test;
+const { describe, beforeEach, afterAll, beforeAll } = test;
 
-const { generateFlow, insertNodes } = require('./util/nodered');
+const { generateTCPFlow, generateEmptyFlow, insertNodes, deleteAllFlows, deleteFlow, generateSheetToJSONNode, changeUserConfig } = require('./util/nodered');
 const createTCPClient = require('./util/tcp-client');
 const NodeRedEditor = require('./util/editorElements');
 
@@ -14,19 +14,48 @@ const { version } = require('os')
 const metaKey = version().includes('Darwin') ? 'Meta' : 'Control'
 // Usage in a test case
 describe('Node-RED Interface', () => {
-
-    beforeEach(async ({ page }) => {
-        return test.step('Given a clean nodered instance', async () => {
-            const editor = new NodeRedEditor({ page });
-            await page.goto(NODERED_URL);
-            await editor.resetChart();
+    beforeAll(async () => {
+        await deleteAllFlows({
+            serverUrl: NODERED_URL
         })
+        await changeUserConfig({
+            serverUrl: NODERED_URL,
+            data: {
+                "editor": {
+                    "view": {
+                        "view-store-zoom": false,
+                        "view-store-position": false,
+                        "view-show-grid": true,
+                        "view-snap-grid": true,
+                        "view-grid-size": 20,
+                        "view-node-status": true,
+                        "view-node-show-label": true,
+                        "view-show-tips": true,
+                        "view-show-welcome-tours": true
+                    }
+                },
+                "menu-deploymenu-item-full": false,
+                "menu-deploymenu-item-flow": true,
+                "menu-deploymenu-item-node": false
+            }
+        })
+
+
+
+    })
+    // afterAll(async () => {
+    //     return deleteAllFlows({
+    //         serverUrl: NODERED_URL
+    //     })
+    // })
+    beforeEach(async ({ page }) => {
+        await page.goto(NODERED_URL);
     })
 
     describe('should create a flow with an API and setup sheets', () => {
         test('Use case: Successfuly configure node ', async ({ page }) => {
             const editor = new NodeRedEditor({ page });
-            const flow = generateFlow({ tcpPort: TCP_PORT })
+            const flow = generateSheetToJSONNode()
 
             await test.step('Given a web API flow is available', async () => {
                 await insertNodes({
@@ -35,8 +64,8 @@ describe('Node-RED Interface', () => {
                 });
             });
 
-            await test.step('When I reload the home page', async () => {
-                await page.goto(NODERED_URL);
+            await test.step('When I reload the home page the tab should be available', async () => {
+                await page.goto(`${NODERED_URL}/#flow/${flow.tab.id}`);
             });
 
             await test.step('And I add a valid Google authentication configuration', async () => {
@@ -90,16 +119,17 @@ describe('Node-RED Interface', () => {
             const rangeOfTwoLines = `${firstLine}:${secondLine}`
 
             const editor = new NodeRedEditor({ page });
-            const flow = generateFlow({ tcpPort: TCP_PORT })
-            await test.step('Given a web API flow is available', async () => {
+            const flow = generateTCPFlow({ tcpPort: TCP_PORT })
+
+            await test.step('Given I insert a complete flow using TCP and the sheets-to-json node', async () => {
                 await insertNodes({
                     nodes: Object.values(flow),
                     serverUrl: NODERED_URL
                 });
             });
 
-            await test.step('When I reload the home page', async () => {
-                await page.goto(NODERED_URL);
+            await test.step('When I reload the home page the tab should be available', async () => {
+                await page.goto(`${NODERED_URL}/#flow/${flow.tab.id}`);
             });
 
             await test.step('And I add a valid Google authentication configuration', async () => {
@@ -131,7 +161,7 @@ describe('Node-RED Interface', () => {
                 await expect(range).toBeEnabled()
                 await range.focus()
 
-                await range.press('Control+a');
+                await range.press(metaKey + '+a');
                 await page.keyboard.press('Backspace');
 
                 await range.type(rangeOfTwoLines)
@@ -146,7 +176,6 @@ describe('Node-RED Interface', () => {
             });
 
             await test.step('And I can receive two messages with correct columns', async () => {
-                // await page.goto(NODERED_URL)
                 await page.waitForTimeout(1000)
 
                 const receivedItems = await createTCPClient({ timeout: 1000, port: TCP_PORT })

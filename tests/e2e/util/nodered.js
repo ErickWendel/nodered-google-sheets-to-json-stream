@@ -1,15 +1,55 @@
-const generateRandomId = () => 'node-' + Math.random().toString(36).substr(2, 9);
-
+const { randomUUID } = require('crypto')
+const generateRandomId = () => 'node-' + randomUUID().slice(0, 8)
 const generateRandomName = (base, id) => base + '-' + id;
-function generateFlow({ tcpPort }) {
-    // Generate unique IDs and names for the nodes
+function generateEmptyFlow() {
+    const tabId = generateRandomId()
+    return {
+        tab: {
+            id: tabId,
+            info: '',
+            type: 'tab',
+            label: `Flow 1`
+        },
+    }
+}
+
+function generateSheetToJSONNode() {
+
+    const sheetsToJsonStreamNodeId = generateRandomId();
+    const tabId = generateRandomId()
+    return {
+        tab: {
+            id: tabId,
+            info: '',
+            type: 'tab',
+            label: `Flow ${tabId}`
+        },
+        sheetsToJSON: {
+            id: sheetsToJsonStreamNodeId,
+            type: 'sheets-to-json-stream',
+            name: generateRandomName('Sheets to JSON Stream', sheetsToJsonStreamNodeId),
+            "x": 200,
+            "y": 250,
+            z: tabId,
+            wires: [[]]
+        },
+    }
+}
+function generateTCPFlow({ tcpPort }) {
 
     const tcpInNodeId = generateRandomId();
     const sheetsToJsonStreamNodeId = generateRandomId();
     const tcpRespondeNodeId = generateRandomId();
     const formatToStringFn = generateRandomId();
     const debugNodeId = generateRandomId()
+    const tabId = generateRandomId()
     return {
+        tab: {
+            id: tabId,
+            info: '',
+            type: 'tab',
+            label: `Flow ${tabId}`
+        },
         tcpIn: {
             id: tcpInNodeId,
             name: generateRandomName('TCP In', tcpInNodeId),
@@ -26,6 +66,7 @@ function generateFlow({ tcpPort }) {
             "tls": "",
             "x": 120,
             "y": 180,
+            z: tabId,
             wires: [[sheetsToJsonStreamNodeId]]
         },
         sheetsToJSON: {
@@ -33,6 +74,7 @@ function generateFlow({ tcpPort }) {
             type: 'sheets-to-json-stream',
             name: generateRandomName('Sheets to JSON Stream', sheetsToJsonStreamNodeId),
             "x": 200, "y": 250,
+            z: tabId,
             wires: [[formatToStringFn]]
         },
         formatTOStringFn: {
@@ -47,6 +89,7 @@ function generateFlow({ tcpPort }) {
             finalize: "",
             libs: [],
             "x": 300, "y": 300,
+            z: tabId,
             wires: [[tcpRespondeNodeId, debugNodeId]]
         },
         debug: {
@@ -55,7 +98,9 @@ function generateFlow({ tcpPort }) {
             name: generateRandomName('Debug', debugNodeId),
             active: true,
             outputs: 1,
-            "x": 580, "y": 300,
+            "x": 580,
+            "y": 300,
+            z: tabId,
             wires: [[]]
         },
         tcpOut: {
@@ -70,17 +115,47 @@ function generateFlow({ tcpPort }) {
             "tls": "",
             "x": 340,
             "y": 380,
+            z: tabId,
             "wires": []
         }
     }
 }
-async function insertNodes({ nodes, serverUrl }) {
-    const flows = await (await fetch(`${serverUrl}/flows`)).json()
+
+async function deleteFlow({ serverUrl, flowId }) {
+    return fetch(`${serverUrl}/flow/${flowId}`, {
+        method: 'DELETE'
+    });
+}
+
+async function changeUserConfig({ serverUrl, data }) {
+    return fetch(`${serverUrl}/settings/user`, {
+        method: 'POST',
+        body: JSON.stringify(data)
+    });
+}
+async function deleteAllFlows({ serverUrl }) {
+    const flows = await getAllFlows({ serverUrl });
     const tab = flows.find(item => item.label === 'Flow 1')
-    nodes.forEach(node => node.z = tab.id)
+    const deletePromises = flows.map(async (flow) => {
+        const flowId = flow.id;
+        if (flowId === tab?.id) return
+
+        return deleteFlow({ serverUrl, flowId })
+    });
+
+    return Promise.all(deletePromises);
+}
+
+async function getAllFlows({ serverUrl }) {
+    const flows = await (await fetch(`${serverUrl}/flows`)).json()
+    return flows
+}
+
+async function insertNodes({ nodes, serverUrl }) {
+    // const flows = await getAllFlows({ serverUrl })
     const payload = [
-        tab,
-        ...nodes
+        // ...flows,
+        ...nodes,
     ]
 
     return await fetch(`${serverUrl}/flows`, {
@@ -92,6 +167,11 @@ async function insertNodes({ nodes, serverUrl }) {
     });
 }
 module.exports = {
-    generateFlow,
-    insertNodes
+    generateTCPFlow,
+    changeUserConfig,
+    generateSheetToJSONNode,
+    generateEmptyFlow,
+    insertNodes,
+    deleteFlow,
+    deleteAllFlows
 }
