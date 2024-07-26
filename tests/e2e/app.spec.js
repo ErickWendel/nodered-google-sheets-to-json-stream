@@ -131,8 +131,9 @@ describe('Node-RED Interface', () => {
                 await expect(range).toBeEnabled()
                 await range.focus()
 
-                await range.press('Meta+a')
-                await range.press('Backspace')
+                await range.press('Meta+a');
+                await page.keyboard.press('Backspace');
+
                 await range.type(rangeOfTwoLines)
                 await range.press('Enter')
                 await range.press('Meta+Enter');
