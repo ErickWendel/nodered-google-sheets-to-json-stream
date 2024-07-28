@@ -4,15 +4,15 @@ const spreadsheet = require('../../spreadsheet.json');
 const { test, expect } = require('@playwright/test')
 const { describe, beforeEach, afterAll, beforeAll } = test;
 
-const { generateTCPFlow, generateEmptyFlow, insertNodes, deleteAllFlows, deleteFlow, generateSheetToJSONNode, changeUserConfig, generatePreviouslyCreatedSheetsToJSON } = require('./util/nodered');
-const createTCPClient = require('./util/tcp-client');
+const { generateTCPFlow, generateEmptyFlow, insertNodes, deleteAllFlows, deleteFlow, generateSheetToJSONNode, changeUserConfig, generatePreviouslyCreatedSheetsToJSON, generateTCPFlowWithCompleteData } = require('./util/nodered');
+const createAndTriggerTCPClient = require('./util/tcp-client');
 const NodeRedEditor = require('./util/editorElements');
 
 const NODERED_URL = 'http://localhost:1880'
 const TCP_PORT = 3000
 const { version } = require('os')
 const metaKey = version().includes('Darwin') ? 'Meta' : 'Control'
-// Usage in a test case
+
 describe('Node-RED Interface', () => {
     beforeAll(async () => {
         await deleteAllFlows({
@@ -46,11 +46,16 @@ describe('Node-RED Interface', () => {
     })
 
     const firstSheet = spreadsheet.sheets.at(0)
+    const secondSheet = spreadsheet.sheets.at(1)
+
+    const firstSheetColumns = JSON.stringify(firstSheet.columns)
+    const secondSheetColumns = JSON.stringify(secondSheet.columns)
+
     const sheetsNames = spreadsheet.sheets.map(item => item.name)
 
     describe('should create a flow with an API and setup sheets', () => {
 
-        test(`Use case: receive data 2 lines from the sheet`, async ({ page }) => {
+        test(`Use case: create config and sheets-to-json nodes and set range to consume 2 lines from the sheet`, async ({ page }) => {
             const [firstLine, remaining] = firstSheet.range.split(':')
             const secondLine = remaining.replace(/\d+/, '3')
             const rangeOfTwoLines = `${firstLine}:${secondLine}`
@@ -112,10 +117,10 @@ describe('Node-RED Interface', () => {
                 await editor.elements.workspaceArea().press(metaKey + '+d');
             });
 
-            await test.step('And I can receive two messages with correct columns', async () => {
+            await test.step('Then I can receive two messages with correct columns', async () => {
                 await page.waitForTimeout(1000)
 
-                const receivedItems = await createTCPClient({ timeout: 1000, port: TCP_PORT })
+                const receivedItems = await createAndTriggerTCPClient({ timeout: 1000, port: TCP_PORT })
                 expect(receivedItems.length).toBe(2)
 
                 for (const item of receivedItems) {
@@ -124,7 +129,174 @@ describe('Node-RED Interface', () => {
                     }
                 }
             })
-        })
+        });
+
+        ; {
+
+            const linesToConsume = 4
+            const expectedAmountOfLines = linesToConsume - 1
+            const expectedAmountOfColumns = 3
+            const expectedJSONColumns = firstSheet.columns.slice(2, expectedAmountOfColumns)
+            const columnLetter = 'C' // will get only the first 3 columns
+
+            test(`Use case: using range A1:${columnLetter}${linesToConsume} and columns ${JSON.stringify(expectedJSONColumns)} it should process ${expectedAmountOfLines} lines`, async ({ page }) => {
+                const editor = new NodeRedEditor({ page });
+                const regex = /\:\D+(?<column>[a-zA-Z]+)(?<digits>\d+)/g;
+                const expectedRange = firstSheet.range.split(':').at(0).concat(`:${columnLetter}${linesToConsume}`)
+
+                const flow = generateTCPFlowWithCompleteData({
+                    sheets: spreadsheet.sheets,
+                    spreadsheetId: spreadsheet.spreadsheetId,
+                    googleAuthCredentials: spreadsheet.googleAuthCredentials,
+                    tcpPort: TCP_PORT,
+                })
+
+                await test.step('Given I insert a complete flow using sheets-to-json node and a valid config', async () => {
+                    await insertNodes({
+                        nodes: Object.values(flow),
+                        serverUrl: NODERED_URL
+                    });
+                });
+
+                await test.step('When I reload the home page the tab should be available', async () => {
+                    await page.goto(`${NODERED_URL}/#flow/${flow.tab.id}`);
+                });
+
+                await test.step('And I open the node', async () => {
+                    const sheetsToJsonStreamNode = flow.sheetsToJSON.id
+                    const node = page.locator(`#${sheetsToJsonStreamNode}`)
+                    await node.waitFor();
+                    await node.dblclick();
+                })
+
+                await test.step(`And I change the range`, async () => {
+                    const input = editor.elements.sheetsToJSON.rangeInput()
+                    await expect(input).toBeEnabled()
+
+                    await input.press(metaKey + '+a');
+                    await input.press('Backspace');
+
+                    await input.type(expectedRange)
+                    await input.press('Enter');
+                });
+
+                await test.step(`And I change the columns`, async () => {
+                    const input = editor.elements.sheetsToJSON.columnsInput()
+                    await expect(input).toBeEnabled()
+
+                    await input.press(metaKey + '+a');
+                    await input.press('Backspace');
+
+                    await input.type(JSON.stringify(expectedJSONColumns))
+                    await input.press('Enter');
+                });
+
+                await test.step('And I deploy it', async () => {
+                    await editor.elements.inputLabel().press(metaKey + '+Enter');
+                    const workspaceArea = editor.elements.workspaceArea()
+                    await workspaceArea.waitFor();
+                    await workspaceArea.click();
+                    await workspaceArea.press(metaKey + '+d');
+                })
+
+                await test.step(`Then I can receive ${expectedAmountOfLines} messages with columns ${JSON.stringify(expectedJSONColumns)}`, async () => {
+                    await page.waitForTimeout(1000)
+
+                    const receivedItems = await createAndTriggerTCPClient({ timeout: 1000, port: TCP_PORT })
+                    expect(receivedItems.length).toBe(expectedAmountOfLines)
+
+                    for (const item of receivedItems) {
+                        for (const colum of expectedJSONColumns) {
+                            expect(item).toHaveProperty(colum)
+                        }
+                    }
+                })
+
+            })
+        };
+
+        ; {
+            const linesToConsume = 2
+            const columnsToConsume = 5
+            const expectedAmountOfLines = linesToConsume - 1
+            const expectedJSONColumns = firstSheet.columns.slice(2, columnsToConsume) // will ignore the first 3 columns
+            const columnLetter = 'E' // will get only the first 5 columns but process 3 starting from the 2nd
+
+            test(`Use case: using range ${firstSheet.range} and columns ${JSON.stringify(expectedJSONColumns)} it should process ${expectedAmountOfLines} lines`, async ({ page }) => {
+                const editor = new NodeRedEditor({ page });
+                const regex = /\:\D+(?<column>[a-zA-Z]+)(?<digits>\d+)/g;
+                const expectedRange = firstSheet.range.split(':').at(0).concat(`:${columnLetter}${linesToConsume}`)
+
+                const flow = generateTCPFlowWithCompleteData({
+                    sheets: spreadsheet.sheets,
+                    spreadsheetId: spreadsheet.spreadsheetId,
+                    googleAuthCredentials: spreadsheet.googleAuthCredentials,
+                    tcpPort: TCP_PORT,
+                })
+
+                await test.step('Given I insert a complete flow using sheets-to-json node and a valid config', async () => {
+                    await insertNodes({
+                        nodes: Object.values(flow),
+                        serverUrl: NODERED_URL
+                    });
+                });
+
+                await test.step('When I reload the home page the tab should be available', async () => {
+                    await page.goto(`${NODERED_URL}/#flow/${flow.tab.id}`);
+                });
+
+                await test.step('And I open the node', async () => {
+                    const sheetsToJsonStreamNode = flow.sheetsToJSON.id
+                    const node = page.locator(`#${sheetsToJsonStreamNode}`)
+                    await node.waitFor();
+                    await node.dblclick();
+                })
+
+                await test.step(`And I change the range`, async () => {
+                    const input = editor.elements.sheetsToJSON.rangeInput()
+                    await expect(input).toBeEnabled()
+
+                    await input.press(metaKey + '+a');
+                    await input.press('Backspace');
+
+                    await input.type(expectedRange)
+                    await input.press('Enter');
+                });
+
+                await test.step(`And I change the columns`, async () => {
+                    const input = editor.elements.sheetsToJSON.columnsInput()
+                    await expect(input).toBeEnabled()
+
+                    await input.press(metaKey + '+a');
+                    await input.press('Backspace');
+
+                    await input.type(JSON.stringify(expectedJSONColumns))
+                    await input.press('Enter');
+                });
+
+                await test.step('And I deploy it', async () => {
+                    await editor.elements.inputLabel().press(metaKey + '+Enter');
+                    const workspaceArea = editor.elements.workspaceArea()
+                    await workspaceArea.waitFor();
+                    await workspaceArea.click();
+                    await workspaceArea.press(metaKey + '+d');
+                })
+
+                await test.step(`Then I can receive ${expectedAmountOfLines} messages with columns ${JSON.stringify(expectedJSONColumns)}`, async () => {
+                    await page.waitForTimeout(1000)
+
+                    const receivedItems = await createAndTriggerTCPClient({ timeout: 1000, port: TCP_PORT })
+                    expect(receivedItems.length).toBe(expectedAmountOfLines)
+
+                    for (const item of receivedItems) {
+                        for (const colum of expectedJSONColumns) {
+                            expect(item).toHaveProperty(colum)
+                        }
+                    }
+                })
+
+            })
+        }
     });
 
     describe('configuration nodes', () => {
@@ -192,8 +364,11 @@ describe('Node-RED Interface', () => {
         describe('An active flow with correctly config node configured', () => {
             test('Use case: the previously configured fields should remain the same', async ({ page }) => {
                 const editor = new NodeRedEditor({ page });
-                const flow = generatePreviouslyCreatedSheetsToJSON({ spreadsheet })
-                const secondSheet = spreadsheet.sheets.at(1)
+                const flow = generatePreviouslyCreatedSheetsToJSON({
+                    sheets: [secondSheet, firstSheet],
+                    spreadsheetId: spreadsheet.spreadsheetId,
+                    googleAuthCredentials: spreadsheet.googleAuthCredentials,
+                })
 
                 await test.step('Given I insert a complete flow using sheets-to-json node and a valid config', async () => {
                     await insertNodes({
@@ -207,7 +382,7 @@ describe('Node-RED Interface', () => {
                 });
 
                 async function runNodeCheckingFields() {
-                    await test.step('When I open the node', async () => {
+                    await test.step('And I open the node', async () => {
                         const sheetsToJsonStreamNode = flow.sheetsToJSON.id
                         const node = page.locator(`#${sheetsToJsonStreamNode}`)
                         await node.waitFor();
@@ -219,12 +394,12 @@ describe('Node-RED Interface', () => {
                         await expect(input).toHaveValue(spreadsheet.spreadsheetId)
                     });
 
-                    await test.step(`Then the range field should be ${secondSheet.range}`, async () => {
+                    await test.step(`And the range field should be ${secondSheet.range}`, async () => {
                         const input = await editor.elements.sheetsToJSON.rangeInput()
                         await expect(input).toHaveValue(secondSheet.range)
                     });
 
-                    await test.step(`Then the active sheet id should be ${secondSheet.name}`, async () => {
+                    await test.step(`And the active sheet id should be ${secondSheet.name}`, async () => {
                         const selectElement = await editor.elements.sheetsToJSON.sheetListInput();
                         await expect(selectElement).toBeEnabled();
 
@@ -239,7 +414,7 @@ describe('Node-RED Interface', () => {
                     });
 
                     const secondSheetColumns = JSON.stringify(secondSheet.columns)
-                    await test.step(`Then the columns should be ${secondSheetColumns}`, async () => {
+                    await test.step(`And the columns should be ${secondSheetColumns}`, async () => {
                         const input = await editor.elements.sheetsToJSON.columnsInput();
                         await expect(input).toHaveValue(secondSheetColumns)
                     });
@@ -247,7 +422,7 @@ describe('Node-RED Interface', () => {
 
                 await runNodeCheckingFields()
 
-                await test.step('Then when I deploy it', async () => {
+                await test.step('And I deploy it', async () => {
                     await editor.elements.inputLabel().press(metaKey + '+Enter');
                     await editor.elements.workspaceArea().click();
                     await editor.elements.workspaceArea().press(metaKey + '+d');
@@ -261,13 +436,11 @@ describe('Node-RED Interface', () => {
 
             test('Use case: if the chosen sheet is changed its columns and range should be updated', async ({ page }) => {
                 const editor = new NodeRedEditor({ page });
-                const flow = generatePreviouslyCreatedSheetsToJSON({ spreadsheet })
-
-                const firstSheet = spreadsheet.sheets.at(0)
-                const secondSheet = spreadsheet.sheets.at(1)
-
-                const firstSheetColumns = JSON.stringify(firstSheet.columns)
-                const secondSheetColumns = JSON.stringify(secondSheet.columns)
+                const flow = generatePreviouslyCreatedSheetsToJSON({
+                    sheets: [secondSheet, firstSheet],
+                    spreadsheetId: spreadsheet.spreadsheetId,
+                    googleAuthCredentials: spreadsheet.googleAuthCredentials,
+                })
 
                 await test.step('Given I insert a complete flow using sheets-to-json node and a valid config', async () => {
                     await insertNodes({
@@ -280,45 +453,41 @@ describe('Node-RED Interface', () => {
                     await page.goto(`${NODERED_URL}/#flow/${flow.tab.id}`);
                 });
 
-                await test.step('When I open the node', async () => {
+                await test.step('And I open the node', async () => {
                     const sheetsToJsonStreamNode = flow.sheetsToJSON.id
                     const node = page.locator(`#${sheetsToJsonStreamNode}`)
                     await node.waitFor();
                     await node.dblclick();
                 })
 
-                await test.step(`When I choose the sheets ${firstSheet.name}`, async () => {
+                await test.step(`And I choose the sheets ${firstSheet.name}`, async () => {
                     const selectElement = await editor.elements.sheetsToJSON.sheetListInput();
                     await selectElement.waitFor();
 
                     await selectElement.type(firstSheet.name);
                     await selectElement.focus();
-                    await page.keyboard.press('Enter');
-
                 });
 
+                async function runNodeCheckingFields() {
+                    await test.step(`And the active sheet id should be ${firstSheet.name} and the ${secondSheet.name} should be in the end`, async () => {
+                        const selectElement = await editor.elements.sheetsToJSON.sheetListInput();
 
-                await test.step(`Then the active sheet id should be ${firstSheet.name} and the ${secondSheet.name} should be in the end`, async () => {
-                    const selectElement = await editor.elements.sheetsToJSON.sheetListInput();
-                    // await selectElement.waitFor();
+                        const options = await selectElement.evaluate((select) => {
+                            return Array.from(select.options).map(option => option.value);
+                        });
 
-                    const options = await selectElement.evaluate((select) => {
-                        return Array.from(select.options).map(option => option.value);
+                        expect(options).toStrictEqual([
+                            firstSheet.name,
+                            secondSheet.name,
+                        ]);
                     });
 
-                    expect(options).toStrictEqual([
-                        firstSheet.name,
-                        secondSheet.name,
-                    ]);
-                });
-                async function runNodeCheckingFields() {
-
-                    await test.step(`Then the range should ${firstSheet.range}`, async () => {
+                    await test.step(`And the range should ${firstSheet.range}`, async () => {
                         const input = await editor.elements.sheetsToJSON.rangeInput()
                         await expect(input).toHaveValue(firstSheet.range)
                     });
 
-                    await test.step(`Then the columns should be ${firstSheetColumns}`, async () => {
+                    await test.step(`And the columns should be ${firstSheetColumns}`, async () => {
                         const input = await editor.elements.sheetsToJSON.columnsInput();
                         await expect(input).toHaveValue(firstSheetColumns)
                     });
@@ -326,7 +495,7 @@ describe('Node-RED Interface', () => {
 
                 await runNodeCheckingFields()
 
-                await test.step('Then when I deploy it', async () => {
+                await test.step('And I deploy it', async () => {
                     await editor.elements.inputLabel().press(metaKey + '+Enter');
                     await editor.elements.workspaceArea().click();
                     await editor.elements.workspaceArea().press(metaKey + '+d');
@@ -344,15 +513,14 @@ describe('Node-RED Interface', () => {
                 })
             })
 
-            test.skip('Use case: if the chosen range is changed nodered should persist it', async ({ page }) => {
+            test('Use case: if the chosen range is changed nodered should persist it', async ({ page }) => {
                 const editor = new NodeRedEditor({ page });
-                const flow = generatePreviouslyCreatedSheetsToJSON({ spreadsheet })
+                const flow = generatePreviouslyCreatedSheetsToJSON({
+                    sheets: [secondSheet, firstSheet],
+                    spreadsheetId: spreadsheet.spreadsheetId,
+                    googleAuthCredentials: spreadsheet.googleAuthCredentials,
+                })
 
-                const firstSheet = spreadsheet.sheets.at(0)
-                const secondSheet = spreadsheet.sheets.at(1)
-
-                const firstSheetColumns = JSON.stringify(firstSheet.columns)
-                const secondSheetColumns = JSON.stringify(secondSheet.columns)
 
                 await test.step('Given I insert a complete flow using sheets-to-json node and a valid config', async () => {
                     await insertNodes({
@@ -365,31 +533,31 @@ describe('Node-RED Interface', () => {
                     await page.goto(`${NODERED_URL}/#flow/${flow.tab.id}`);
                 });
 
-                await test.step('When I open the node', async () => {
+                await test.step('And I open the node', async () => {
                     const sheetsToJsonStreamNode = flow.sheetsToJSON.id
                     const node = page.locator(`#${sheetsToJsonStreamNode}`)
                     await node.waitFor();
                     await node.dblclick();
                 })
-                const expectedRange = 'A1:B2'
 
-                await test.step(`When I change the range`, async () => {
+                const expectedRange = 'A1:B2'
+                await test.step(`And I change the range`, async () => {
                     const input = editor.elements.sheetsToJSON.rangeInput()
                     await expect(input).toBeEnabled()
 
-                    await input.focus()
-
                     await input.press(metaKey + '+a');
-                    await page.keyboard.press('Backspace');
+                    await input.press('Backspace');
 
                     await input.type(expectedRange)
-                    await input.press('Enter')
+                    await input.press('Enter');
                 });
 
-                await test.step('Then when I deploy it', async () => {
+                await test.step('And I deploy it', async () => {
                     await editor.elements.inputLabel().press(metaKey + '+Enter');
-                    await editor.elements.workspaceArea().click();
-                    await editor.elements.workspaceArea().press(metaKey + '+d');
+                    const workspaceArea = editor.elements.workspaceArea()
+                    await workspaceArea.waitFor();
+                    await workspaceArea.click();
+                    await workspaceArea.press(metaKey + '+d');
                 })
 
                 await test.step('Then I open the node', async () => {
@@ -399,48 +567,18 @@ describe('Node-RED Interface', () => {
                     await node.dblclick();
                 })
 
-                await test.step(`Then the range should ${expectedRange}`, async () => {
+                await test.step(`And the range should ${expectedRange}`, async () => {
                     const input = await editor.elements.sheetsToJSON.rangeInput()
                     await expect(input).toBeEnabled()
                     await expect(input).toHaveValue(expectedRange)
                 });
 
-                await test.step(`Then the columns should be ${firstSheetColumns}`, async () => {
+                await test.step(`And the columns should be ${firstSheetColumns}`, async () => {
                     const input = await editor.elements.sheetsToJSON.columnsInput();
-                    await expect(input).toHaveValue(firstSheetColumns)
+                    await expect(input).toHaveValue(secondSheetColumns)
                 });
-
             })
 
         })
-
     })
-
-    // it('manually create the sheet node in the editor', async ({ page }) => {
-    //     const editor = new NodeRedEditor({ page });
-
-    //     await page.goto(NODERED_URL);
-    //     const nodeId = await addNodeAndOpen(editor, 'sheets')
-
-    //     await page.locator(`#${nodeId}`).dblclick();
-
-    //     await addValidConfig(editor);
-
-    //     await editor.elements.sheetsToJSON.sheetIdInput().type(spreadsheet.spreadsheetId);
-    //     await editor.elements.sheetsToJSON.sheetIdInput().press('Enter');
-    //     await page.waitForTimeout(3000);
-
-    //     const selectElement = await editor.elements.sheetsToJSON.sheetListInput()
-    //     const options = await selectElement.evaluate((select) => {
-    //         return Array.from(select.options).map(option => option.value);
-    //     });
-
-    //     expect(options).toStrictEqual(spreadsheet.sheets);
-
-    //     await expect(editor.elements.sheetsToJSON.rangeInput()).toHaveValue(spreadsheet.range);
-    //     await expect(editor.elements.sheetsToJSON.columnsInput()).toHaveValue(JSON.stringify(spreadsheet.columns));
-    //     await editor.elements.inputLabel().press('Meta+Enter');
-    //     await editor.elements.workspaceArea().click()
-    //     await editor.elements.workspaceArea().press('Meta+d')
-    // });
 });

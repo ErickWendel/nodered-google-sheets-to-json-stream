@@ -13,10 +13,10 @@ class NodeRedEditor {
         nodeSearchInput: () => this.page.locator('#red-ui-type-search-input'),
         inputLabel: () => this.page.locator('#node-input-name'),
         sheetsToJSON: {
-            sheetIdInput: () => this.page.locator('#node-input-sheetId'),
+            sheetIdInput: () => this.page.getByPlaceholder('Spreadsheet ID'),
             sheetListInput: () => this.page.locator('#node-input-sheetList'),
-            rangeInput: () => this.page.locator('#node-input-range'),
-            columnsInput: () => this.page.locator('#node-input-columns'),
+            rangeInput: () => this.page.getByRole('textbox', { name: 'Sheet!A1:B2' }),
+            columnsInput: () => this.page.getByRole('textbox', { name: "['name', 'email']" }),
             addNewConfigInputBtn: () => this.page.locator('#node-input-btn-config-add'),
             gAuth: {
                 configArea: () => this.page.locator('#node-config-input-config'),

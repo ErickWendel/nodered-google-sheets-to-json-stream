@@ -12,29 +12,28 @@ function generateEmptyFlow() {
         },
     }
 }
-function generateValidConfigNode({ spreadsheet }) {
+function generateValidConfigNode({ googleAuthCredentials }) {
 
     const nodeId = generateRandomId()
     return {
         config: {
             "id": nodeId,
             "type": "gauth",
-            "name": spreadsheet.googleAuthCredentials.client_email,
+            "name": googleAuthCredentials.client_email,
             "credentials": {
-                "config": JSON.stringify(spreadsheet.googleAuthCredentials)
+                "config": JSON.stringify(googleAuthCredentials)
             }
         }
     }
 }
 
-function generatePreviouslyCreatedSheetsToJSON({ spreadsheet }) {
-
+function generatePreviouslyCreatedSheetsToJSON({ sheets, spreadsheetId, googleAuthCredentials }) {
     const emptyTaB = generateEmptyFlow()
-    const validConfig = generateValidConfigNode({ spreadsheet })
+    const validConfig = generateValidConfigNode({ googleAuthCredentials })
     const nodeSheetId = generateRandomId()
-    const [firstSheet, secondSheet] = spreadsheet.sheets
+    const firstSheet = sheets.at(0)
 
-    const generateSheetValuesWithSecondItemEnabled = [secondSheet, firstSheet].map((item, index) => {
+    const generateSheetValuesWithSecondItemEnabled = sheets.map((item, index) => {
         return {
             text: item.name,
             value: item.name,
@@ -50,12 +49,12 @@ function generatePreviouslyCreatedSheetsToJSON({ spreadsheet }) {
             "type": "sheets-to-json-stream",
             "z": emptyTaB.tab.id,
             "config": validConfig.config.id,
-            "sheetId": spreadsheet.spreadsheetId,
-            "sheetList": secondSheet.name,
+            "sheetId": spreadsheetId,
+            "sheetList": firstSheet.name,
             "sheetListValues": JSON.stringify(generateSheetValuesWithSecondItemEnabled),
-            "range": secondSheet.range,
-            "columns": JSON.stringify(secondSheet.columns),
-            "name": secondSheet.name,
+            "range": firstSheet.range,
+            "columns": JSON.stringify(firstSheet.columns),
+            "name": firstSheet.name,
             "x": 160,
             "y": 100,
             "wires": [
@@ -66,7 +65,6 @@ function generatePreviouslyCreatedSheetsToJSON({ spreadsheet }) {
 }
 
 function generateSheetToJSONNode() {
-
     const sheetsToJsonStreamNodeId = generateRandomId();
     const tabId = generateRandomId()
     return {
@@ -88,14 +86,117 @@ function generateSheetToJSONNode() {
     }
 }
 
-function generateTCPFlow({ tcpPort }) {
+function generateTCPFlowWithCompleteData({ tcpPort, sheets, spreadsheetId, googleAuthCredentials }) {
+
+    const emptyTaB = generateEmptyFlow()
     const tcpInNodeId = generateRandomId();
+    const validConfig = generateValidConfigNode({ googleAuthCredentials })
     const sheetsToJsonStreamNodeId = generateRandomId();
-    const tcpRespondeNodeId = generateRandomId();
+    const tcpResponseNodeId = generateRandomId();
     const formatToStringFn = generateRandomId();
     const debugNodeId = generateRandomId()
     const tabId = generateRandomId()
+
+    const firstSheet = sheets.at(0)
+
+    const generateSheetValuesWithSecondItemEnabled = sheets.map((item, index) => {
+        return {
+            text: item.name,
+            value: item.name,
+            selected: index === 0
+        }
+    })
+
     return {
+        tab: emptyTaB.tab,
+        tcpIn: {
+            id: tcpInNodeId,
+            name: generateRandomName('TCP In', tcpInNodeId),
+            "type": "tcp in",
+            "server": "server",
+            "host": "localhost",
+            "port": tcpPort,
+            "datamode": "stream",
+            "datatype": "buffer",
+            "newline": "",
+            "topic": "",
+            "trim": false,
+            "base64": false,
+            "tls": "",
+            "x": 120,
+            "y": 180,
+            z: tabId,
+            wires: [[sheetsToJsonStreamNodeId]]
+        },
+        config: validConfig.config,
+        sheetsToJSON: {
+            "id": sheetsToJsonStreamNodeId,
+            "type": "sheets-to-json-stream",
+            "z": emptyTaB.tab.id,
+            "config": validConfig.config.id,
+            "sheetId": spreadsheetId,
+            "sheetList": firstSheet.name,
+            "sheetListValues": JSON.stringify(generateSheetValuesWithSecondItemEnabled),
+            "range": firstSheet.range,
+            "columns": JSON.stringify(firstSheet.columns),
+            "name": firstSheet.name,
+            "x": 160,
+            "y": 100,
+            wires: [[formatToStringFn]]
+        },
+        formatTOStringFn: {
+            id: formatToStringFn,
+            type: "function",
+            name: generateRandomName('Stringify Reponse', formatToStringFn),
+            func: "msg.payload = JSON.stringify(msg.payload).concat('\\n')\nreturn msg;",
+            outputs: 1,
+            timeout: 0,
+            noerr: 0,
+            initialize: "",
+            finalize: "",
+            libs: [],
+            "x": 300, "y": 300,
+            z: tabId,
+            wires: [[tcpResponseNodeId, debugNodeId]]
+        },
+        debug: {
+            id: debugNodeId,
+            type: "debug",
+            name: generateRandomName('Debug', debugNodeId),
+            active: true,
+            outputs: 1,
+            "x": 580,
+            "y": 300,
+            z: tabId,
+            wires: [[]]
+        },
+        tcpOut: {
+            id: tcpResponseNodeId,
+            name: generateRandomName('TCP Out', tcpResponseNodeId),
+            "type": "tcp out",
+            "host": "localhost",
+            "port": "",
+            "beserver": "reply",
+            "base64": false,
+            "end": false,
+            "tls": "",
+            "x": 340,
+            "y": 380,
+            z: tabId,
+            "wires": []
+        }
+    }
+
+}
+function generateTCPFlow({ tcpPort }) {
+    const tcpInNodeId = generateRandomId();
+    const sheetsToJsonStreamNodeId = generateRandomId();
+    const tcpResponseNodeId = generateRandomId();
+    const formatToStringFn = generateRandomId();
+    const debugNodeId = generateRandomId()
+    const tabId = generateRandomId()
+
+    const flow = {
         tab: {
             id: tabId,
             info: '',
@@ -142,7 +243,7 @@ function generateTCPFlow({ tcpPort }) {
             libs: [],
             "x": 300, "y": 300,
             z: tabId,
-            wires: [[tcpRespondeNodeId, debugNodeId]]
+            wires: [[tcpResponseNodeId, debugNodeId]]
         },
         debug: {
             id: debugNodeId,
@@ -156,8 +257,8 @@ function generateTCPFlow({ tcpPort }) {
             wires: [[]]
         },
         tcpOut: {
-            id: tcpRespondeNodeId,
-            name: generateRandomName('TCP Out', tcpRespondeNodeId),
+            id: tcpResponseNodeId,
+            name: generateRandomName('TCP Out', tcpResponseNodeId),
             "type": "tcp out",
             "host": "localhost",
             "port": "",
@@ -171,6 +272,8 @@ function generateTCPFlow({ tcpPort }) {
             "wires": []
         }
     }
+
+    return flow
 }
 
 async function deleteFlow({ serverUrl, flowId }) {
@@ -221,6 +324,8 @@ async function insertNodes({ nodes, serverUrl }) {
 }
 
 module.exports = {
+    generateTCPFlowWithCompleteData,
+    generateValidConfigNode,
     generateTCPFlow,
     generatePreviouslyCreatedSheetsToJSON,
     generateSheetToJSONNode,

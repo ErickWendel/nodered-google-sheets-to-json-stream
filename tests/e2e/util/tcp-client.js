@@ -1,6 +1,6 @@
 const net = require('net');
 
-function createTCPClient({ timeout, port }) {
+function createAndTriggerTCPClient({ timeout, port }) {
     return new Promise((resolve, reject) => {
         const client = net.createConnection({ port }, () => {
             client.write('hey');
@@ -38,4 +38,4 @@ function createTCPClient({ timeout, port }) {
     });
 }
 
-module.exports = createTCPClient;
+module.exports = createAndTriggerTCPClient;

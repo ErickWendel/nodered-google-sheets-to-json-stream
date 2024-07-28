@@ -193,7 +193,7 @@ class SheetsToJSON {
      * @param {boolean} params.isProcessing - The flag indicating if the processing is active.
      * @returns {Promise<void>}
      */
-    async process({ context, onData, getGoogleAuthNode, isProcessing }) {
+    async process({ context, onData, getGoogleAuthNode, isProcessing, columns }) {
         const sheetMetadata = await this.refreshMetadata(context, getGoogleAuthNode);
         const stream = this.consumeSheetOnDemand({
             spreadsheetId: context.spreadsheetId,
@@ -215,7 +215,7 @@ class SheetsToJSON {
                 for (const indexLine in line) {
                     const headerName = headers[indexLine];
                     if (!isProcessing) break;
-                    if (!context.columns.includes(headerName)) continue;
+                    if (!columns.includes(headerName)) continue;
 
                     lineItem[headerName] = line[indexLine];
                 }
