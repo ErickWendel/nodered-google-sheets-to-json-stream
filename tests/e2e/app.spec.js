@@ -1,10 +1,10 @@
-// @ts-check
+// @ts-nocheck
 
 const spreadsheet = require('../../spreadsheet.json');
 const { test, expect } = require('@playwright/test')
 const { describe, beforeEach, afterAll, beforeAll } = test;
 
-const { generateTCPFlow, generateEmptyFlow, insertNodes, deleteAllFlows, deleteFlow, generateSheetToJSONNode, changeUserConfig } = require('./util/nodered');
+const { generateTCPFlow, generateEmptyFlow, insertNodes, deleteAllFlows, deleteFlow, generateSheetToJSONNode, changeUserConfig, generatePreviouslyCreatedSheetsToJSON } = require('./util/nodered');
 const createTCPClient = require('./util/tcp-client');
 const NodeRedEditor = require('./util/editorElements');
 
@@ -39,18 +39,14 @@ describe('Node-RED Interface', () => {
                 "menu-deploymenu-item-node": false
             }
         })
-
-
-
     })
-    // afterAll(async () => {
-    //     return deleteAllFlows({
-    //         serverUrl: NODERED_URL
-    //     })
-    // })
+
     beforeEach(async ({ page }) => {
         await page.goto(NODERED_URL);
     })
+
+    const firstSheet = spreadsheet.sheets.at(0)
+    const sheetsNames = spreadsheet.sheets.map(item => item.name)
 
     describe('should create a flow with an API and setup sheets', () => {
         test('Use case: Successfuly configure node ', async ({ page }) => {
@@ -90,20 +86,21 @@ describe('Node-RED Interface', () => {
                     return Array.from(select.options).map(option => option.value);
                 });
 
-                expect(options).toStrictEqual(spreadsheet.sheets);
+                expect(options).toStrictEqual(sheetsNames);
             });
 
             await test.step(`And I should see the sheet's columns as an array`, async () => {
                 const columns = editor.elements.sheetsToJSON.columnsInput()
                 await expect(columns).toBeEnabled();
 
-                await expect(columns).toHaveValue(JSON.stringify(spreadsheet.columns));
+                await expect(columns).toHaveValue(JSON.stringify(firstSheet?.columns));
             });
 
-            await test.step(`And the sheet's range should contain "${spreadsheet.range}"`, async () => {
+            await test.step(`And the sheet's range should contain "${firstSheet?.range}"`, async () => {
                 const range = editor.elements.sheetsToJSON.rangeInput()
                 await expect(range).toBeEnabled();
-                await expect(range).toHaveValue(spreadsheet.range);
+                // @ts-ignore
+                await expect(range).toHaveValue(firstSheet.range);
             });
 
             await test.step('And I can deploy Node-RED without errors', async () => {
@@ -114,7 +111,7 @@ describe('Node-RED Interface', () => {
         })
 
         test(`Use case: receive data 2 lines from the sheet`, async ({ page }) => {
-            const [firstLine, remaining] = spreadsheet.range.split(':')
+            const [firstLine, remaining] = firstSheet.range.split(':')
             const secondLine = remaining.replace(/\d+/, '3')
             const rangeOfTwoLines = `${firstLine}:${secondLine}`
 
@@ -153,7 +150,7 @@ describe('Node-RED Interface', () => {
                     return Array.from(select.options).map(option => option.value);
                 });
 
-                expect(options).toStrictEqual(spreadsheet.sheets);
+                expect(options).toStrictEqual(sheetsNames);
             });
 
             await test.step(`And I manually choose range as ${rangeOfTwoLines} and save`, async () => {
@@ -182,7 +179,7 @@ describe('Node-RED Interface', () => {
                 expect(receivedItems.length).toBe(2)
 
                 for (const item of receivedItems) {
-                    for (const colum of spreadsheet.columns) {
+                    for (const colum of firstSheet.columns) {
                         expect(item).toHaveProperty(colum)
                     }
                 }
@@ -190,6 +187,22 @@ describe('Node-RED Interface', () => {
         })
     });
 
+    test('use case: given an existing sheets to json', async ({ page }) => {
+        const editor = new NodeRedEditor({ page });
+        const flow = generatePreviouslyCreatedSheetsToJSON({ spreadsheet })
+
+        await test.step('Given I insert a complete flow using sheets-to-json node and a valid config', async () => {
+            await insertNodes({
+                nodes: Object.values(flow),
+                serverUrl: NODERED_URL
+            });
+        });
+
+        await test.step('When I reload the home page the tab should be available', async () => {
+            await page.goto(`${NODERED_URL}/#flow/${flow.tab.id}`);
+        });
+
+    })
 
     // it('manually create the sheet node in the editor', async ({ page }) => {
     //     const editor = new NodeRedEditor({ page });

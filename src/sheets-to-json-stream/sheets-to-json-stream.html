@@ -1,4 +1,126 @@
 <script type="text/javascript">
+    class SheetsToJsonStream {
+        constructor(sheetListEl, sheetListValuesEl, sheetsRangeEl, sheetsColumnsEl, spreadSheetIdEl, gauthNodeIdEl, reloadFieldsEl) {
+            this.sheetListEl = sheetListEl;
+            this.sheetListValuesEl = sheetListValuesEl;
+            this.sheetsRangeEl = sheetsRangeEl;
+            this.sheetsColumnsEl = sheetsColumnsEl;
+            this.spreadSheetIdEl = spreadSheetIdEl;
+            this.gauthNodeIdEl = gauthNodeIdEl;
+            this.reloadFieldsEl = reloadFieldsEl;
+            this._metadata = null;
+        }
+
+        async dispatchEventToRuntime(data) {
+            const result = await fetch('/sheets-to-json-stream/sheets-options', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(data)
+            });
+            return result.json();
+        }
+
+        updateSheetListAndCells(options, hide = false) {
+            this.sheetListEl.empty();
+            options.forEach(option => {
+                this.sheetListEl.append(new Option(option.text, option.value, option.selected));
+            });
+            this.sheetListValuesEl.val(JSON.stringify(options));
+            this.sheetListEl.prop('disabled', hide);
+            this.sheetsColumnsEl.prop('disabled', hide);
+        }
+
+        async retrieveMetadata(sheetId) {
+            const gauthNodeId = this.gauthNodeIdEl.val();
+            const config = JSON.parse(RED.nodes.node(gauthNodeId)?.credentials?.config ?? '{}');
+            const credentials = { client_email: config.client_email, private_key: config.private_key };
+            const metadata = await this.dispatchEventToRuntime({ sheetId, credentials, gauthNodeId });
+            return metadata;
+        }
+
+        async updateCellOptions() {
+            const sheetTitle = this.sheetListEl.val();
+            const options = JSON.parse(this.sheetListValuesEl.val() || '[]').map(item => ({
+                ...item,
+                selected: item.value === sheetTitle
+            })).sort((prev, next) => next.selected - prev.selected);
+
+            if (options.length) {
+                this.updateSheetListAndCells(options);
+            }
+
+            if (!sheetTitle) return;
+            const sheetId = this.spreadSheetIdEl.val();
+            if (!sheetId) return;
+
+            if (!this._metadata) this._metadata = await this.retrieveMetadata(sheetId);
+            const sheet = this._metadata.sheets.find(item => item.title == sheetTitle);
+
+            this.sheetsRangeEl.typedInput('value', sheet.cellsRange);
+            this.sheetsRangeEl.typedInput('enable');
+            this.sheetsColumnsEl.typedInput('value', JSON.stringify(sheet.headers));
+            this.sheetsColumnsEl.typedInput('enable');
+        }
+
+        async onSheetIdChange() {
+
+            const sheetId = this.spreadSheetIdEl.val();
+            if (!sheetId) return;
+
+            try {
+                this.updateSheetListAndCells([{ text: 'Retrieving data...' }], true);
+                this._metadata = await this.retrieveMetadata(sheetId);
+                if (!this._metadata.sheets) {
+                    this.updateSheetListAndCells([{ text: '' }], true);
+                    return;
+                }
+                const sheetOptions = this._metadata.sheets.map(({ title }, index) => ({
+                    text: title, value: title, selected: index === 0
+                }));
+                this.updateSheetListAndCells(sheetOptions);
+                this.updateCellOptions();
+            } catch (error) {
+                this.updateSheetListAndCells([{ text: 'error loading your sheets...' }], true);
+                console.error(error);
+            }
+        }
+
+        startListening() {
+            setTimeout(() => {
+                this.spreadSheetIdEl.on('change', () => this.onSheetIdChange());
+                this.sheetListEl.on('change', () => this.updateCellOptions());
+                this.reloadFieldsEl.on('click', () => this.onSheetIdChange());
+            }, 100);
+        }
+
+        initialize() {
+            this.sheetsRangeEl.typedInput({ 'types': ['str'] });
+            this.sheetsColumnsEl.typedInput({ 'types': ['json'] });
+            const sheetsListValue = this.sheetListValuesEl.val();
+            if (sheetsListValue) {
+                const data = JSON.parse(sheetsListValue);
+                this.updateSheetListAndCells(data);
+            }
+
+            const sheetIdIsPresent = this.sheetsRangeEl.typedInput('value');
+            if (sheetIdIsPresent) {
+                this.startListening();
+                return;
+            }
+
+            this.sheetsRangeEl.typedInput('value', 'Sheet1:A1:B2');
+            this.sheetsRangeEl.typedInput('disable');
+            this.sheetsColumnsEl.typedInput('value', '["id", "email"]');
+            this.sheetsColumnsEl.typedInput('disable');
+            this.sheetListEl.prop('disabled', true);
+            this.startListening();
+        }
+    }
+</script>
+
+<script type="text/javascript">
     RED.nodes.registerType('sheets-to-json-stream', {
         category: 'function',
         color: '#0da95f',
@@ -17,128 +139,31 @@
         label: function () {
             return this.name || "sheets-to-json-stream";
         },
+
         oneditprepare: function () {
-            const gauthNodeIdEl = $('#node-input-config')
             const sheetListEl = $("#node-input-sheetList");
             const sheetListValuesEl = $("#node-input-sheetListValues");
-            const sheetsRangeEl = $('#node-input-range')
-            const sheetsColumnsEl = $('#node-input-columns')
-            const spreadSheetIdEl = $('#node-input-sheetId')
-            const reloadFieldsEl = $('#reload-fields')
-            const columnsLabel = $('#columnsLabel')
-            const handleCellsAsEl = $('input[name="handle-as"]')
+            const sheetsRangeEl = $('#node-input-range');
+            const sheetsColumnsEl = $('#node-input-columns');
+            const spreadSheetIdEl = $('#node-input-sheetId');
+            const gauthNodeIdEl = $('#node-input-config');
+            const reloadFieldsEl = $('#reload-fields');
 
-            let _metadata = null
-
-            async function dispatchEventToRuntime(data) {
-                const result = await fetch('/sheets-to-json-stream/sheets-options', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify(data)
-                });
-
-                return result.json()
-            }
-
-            function updateSheetListAndCells(options, hide = false) {
-                sheetListEl.empty();
-
-                options.forEach(function (option) {
-                    sheetListEl.append(new Option(option.text, option.value, option.selected));
-                });
-
-                sheetListValuesEl.val(JSON.stringify(options))
-
-                sheetListEl.prop('disabled', hide);
-                sheetsColumnsEl.prop('disabled', hide);
-
-            }
-
-            async function onSheetIdChange() {
-                const sheetId = spreadSheetIdEl.val()
-                if (!sheetId) return
-
-                const gauthNodeId = gauthNodeIdEl.val()
-                const config = JSON.parse(RED.nodes.node(gauthNodeId)?.credentials?.config ?? '{}');
-                const credentials = { client_email: config.client_email, private_key: config.private_key }
-                updateSheetListAndCells([{ text: 'Retrieving data...' }], true)
-
-                try {
-
-                    _metadata = await dispatchEventToRuntime({ sheetId, credentials, gauthNodeId })
-                    if (!_metadata.sheets) {
-                        updateSheetListAndCells([{ text: '' }], true)
-
-                        return
-                    }
-                    const sheetOptions = _metadata.sheets.map(({ title }, index) => ({
-                        text: title, value: title, selected: index === 0
-                    }))
-
-                    updateSheetListAndCells(sheetOptions)
-                    updateCellOptions()
-
-                } catch (error) {
-                    updateSheetListAndCells([{ text: 'error loading your sheets...' }], true)
-                    console.error(error)
-                }
-
-            }
-
-            function updateCellOptions() {
-                const sheetTitle = sheetListEl.val();
-                if (!sheetTitle) return;
-                if (!_metadata) return;
-
-                const sheet = _metadata.sheets.find(item => item.title == sheetTitle);
-
-                sheetsColumnsEl.typedInput('value', JSON.stringify(sheet.headers));
-                sheetsColumnsEl.typedInput('enable')
-
-                sheetsRangeEl.typedInput('value', sheet.cellsRange);
-                sheetsRangeEl.typedInput('enable')
-            }
-
-            function startListening() {
-                spreadSheetIdEl.on('change', onSheetIdChange);
-                reloadFieldsEl.on('click', onSheetIdChange);
-
-                sheetListEl.on('change', updateCellOptions)
-                handleCellsAsEl.on('change', updateCellOptions)
-            }
-
-            // spreadSheetIdEl.val('1Mte7nOo6oqvI4me-tnEenCci0l8bR04810B_q1U_1Ro')
-            sheetsRangeEl.typedInput({ 'types': ['str'] })
-            sheetsColumnsEl.typedInput({ 'types': ['json'] })
-            const sheetsListValue = sheetListValuesEl.val()
-            if (sheetsListValue) {
-                const data = JSON.parse(sheetListValuesEl.val())
-                updateSheetListAndCells(data)
-            }
-
-            if (!sheetsRangeEl.typedInput('value')) {
-
-                sheetsRangeEl.typedInput('value', 'Sheet1:A1:B2');
-                sheetsRangeEl.typedInput('disable')
-
-                sheetsColumnsEl.typedInput('value', '["id", "email"]');
-                sheetsColumnsEl.typedInput('disable')
-
-                sheetListEl.prop('disabled', true)
-
-                startListening()
-
-                return
-            }
-
-            setTimeout(() => startListening());
-
+            const sheetsToJsonStream = new SheetsToJsonStream(
+                sheetListEl,
+                sheetListValuesEl,
+                sheetsRangeEl,
+                sheetsColumnsEl,
+                spreadSheetIdEl,
+                gauthNodeIdEl,
+                reloadFieldsEl
+            );
+            sheetsToJsonStream.initialize();
         }
     });
 
 </script>
+
 <script type="text/html" data-template-name="sheets-to-json-stream">
     <div class="form-row">
         <label for="node-config-input-config">config</label>

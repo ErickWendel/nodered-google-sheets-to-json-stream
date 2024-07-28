@@ -39,6 +39,10 @@ function SheetsToJSONModule(RED, sheetsToJSON) {
             columns: ctx.columns,
             config: ctx.config,
         };
+
+        // if it's added by an automation, don't initialize the module
+        if (Object.values(context).filter(item => !item).length) return
+
         const getGoogleAuthNode = () => JSON.parse(RED.nodes.getNode(context.config).credentials.config);
 
         const reportErrorStatus = onErrorStatus(node)

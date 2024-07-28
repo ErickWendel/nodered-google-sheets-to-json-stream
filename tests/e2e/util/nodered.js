@@ -12,6 +12,58 @@ function generateEmptyFlow() {
         },
     }
 }
+function generateValidConfigNode({ spreadsheet }) {
+
+    const nodeId = generateRandomId()
+    return {
+        config: {
+            "id": nodeId,
+            "type": "gauth",
+            "name": spreadsheet.googleAuthCredentials.client_email,
+            "credentials": {
+                "config": JSON.stringify(spreadsheet.googleAuthCredentials)
+            }
+        }
+    }
+}
+
+function generatePreviouslyCreatedSheetsToJSON({ spreadsheet }) {
+
+    const emptyTaB = generateEmptyFlow()
+    const validConfig = generateValidConfigNode({ spreadsheet })
+    const nodeSheetId = generateRandomId()
+    const [firstSheet, secondSheet] = spreadsheet.sheets
+
+    const generateSheetValuesWithSecondItemEnabled = [secondSheet, firstSheet].map((item, index) => {
+        return {
+            text: item.name,
+            value: item.name,
+            selected: index === 0
+        }
+    })
+
+    return {
+        tab: emptyTaB.tab,
+        config: validConfig.config,
+        sheetsToJSON: {
+            "id": nodeSheetId,
+            "type": "sheets-to-json-stream",
+            "z": emptyTaB.tab.id,
+            "config": validConfig.config.id,
+            "sheetId": spreadsheet.spreadsheetId,
+            "sheetList": secondSheet.name,
+            "sheetListValues": JSON.stringify(generateSheetValuesWithSecondItemEnabled),
+            "range": secondSheet.range,
+            "columns": JSON.stringify(secondSheet.columns),
+            "name": secondSheet.name,
+            "x": 160,
+            "y": 100,
+            "wires": [
+                []
+            ]
+        }
+    }
+}
 
 function generateSheetToJSONNode() {
 
@@ -35,8 +87,8 @@ function generateSheetToJSONNode() {
         },
     }
 }
-function generateTCPFlow({ tcpPort }) {
 
+function generateTCPFlow({ tcpPort }) {
     const tcpInNodeId = generateRandomId();
     const sheetsToJsonStreamNodeId = generateRandomId();
     const tcpRespondeNodeId = generateRandomId();
@@ -133,6 +185,7 @@ async function changeUserConfig({ serverUrl, data }) {
         body: JSON.stringify(data)
     });
 }
+
 async function deleteAllFlows({ serverUrl }) {
     const flows = await getAllFlows({ serverUrl });
     const tab = flows.find(item => item.label === 'Flow 1')
@@ -166,11 +219,13 @@ async function insertNodes({ nodes, serverUrl }) {
         body: JSON.stringify(payload)
     });
 }
+
 module.exports = {
     generateTCPFlow,
-    changeUserConfig,
+    generatePreviouslyCreatedSheetsToJSON,
     generateSheetToJSONNode,
     generateEmptyFlow,
+    changeUserConfig,
     insertNodes,
     deleteFlow,
     deleteAllFlows
