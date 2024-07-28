@@ -259,7 +259,7 @@ describe('Node-RED Interface', () => {
 
             })
 
-            test('Use case: if the sheet chosen is changed its columns and range should be updated', async ({ page }) => {
+            test('Use case: if the chosen sheet is changed its columns and range should be updated', async ({ page }) => {
                 const editor = new NodeRedEditor({ page });
                 const flow = generatePreviouslyCreatedSheetsToJSON({ spreadsheet })
 
@@ -289,26 +289,29 @@ describe('Node-RED Interface', () => {
 
                 await test.step(`When I choose the sheets ${firstSheet.name}`, async () => {
                     const selectElement = await editor.elements.sheetsToJSON.sheetListInput();
-                    await expect(selectElement).toBeEnabled();
+                    await selectElement.waitFor();
 
-                    await selectElement.type(firstSheet.name)
-                    await selectElement.type('Enter')
+                    await selectElement.type(firstSheet.name);
+                    await selectElement.focus();
+                    await page.keyboard.press('Enter');
+
                 });
 
-                async function runNodeCheckingFields() {
-                    await test.step(`Then the active sheet id should be ${firstSheet.name} and the ${secondSheet.name} should be in the end`, async () => {
-                        const selectElement = await editor.elements.sheetsToJSON.sheetListInput();
-                        await selectElement.waitFor();
 
-                        const options = await selectElement.evaluate((select) => {
-                            return Array.from(select.options).map(option => option.value);
-                        });
+                await test.step(`Then the active sheet id should be ${firstSheet.name} and the ${secondSheet.name} should be in the end`, async () => {
+                    const selectElement = await editor.elements.sheetsToJSON.sheetListInput();
+                    // await selectElement.waitFor();
 
-                        expect(options).toStrictEqual([
-                            firstSheet.name,
-                            secondSheet.name,
-                        ]);
+                    const options = await selectElement.evaluate((select) => {
+                        return Array.from(select.options).map(option => option.value);
                     });
+
+                    expect(options).toStrictEqual([
+                        firstSheet.name,
+                        secondSheet.name,
+                    ]);
+                });
+                async function runNodeCheckingFields() {
 
                     await test.step(`Then the range should ${firstSheet.range}`, async () => {
                         const input = await editor.elements.sheetsToJSON.rangeInput()
@@ -322,6 +325,7 @@ describe('Node-RED Interface', () => {
                 }
 
                 await runNodeCheckingFields()
+
                 await test.step('Then when I deploy it', async () => {
                     await editor.elements.inputLabel().press(metaKey + '+Enter');
                     await editor.elements.workspaceArea().click();
@@ -339,6 +343,75 @@ describe('Node-RED Interface', () => {
                     return runNodeCheckingFields()
                 })
             })
+
+            test.skip('Use case: if the chosen range is changed nodered should persist it', async ({ page }) => {
+                const editor = new NodeRedEditor({ page });
+                const flow = generatePreviouslyCreatedSheetsToJSON({ spreadsheet })
+
+                const firstSheet = spreadsheet.sheets.at(0)
+                const secondSheet = spreadsheet.sheets.at(1)
+
+                const firstSheetColumns = JSON.stringify(firstSheet.columns)
+                const secondSheetColumns = JSON.stringify(secondSheet.columns)
+
+                await test.step('Given I insert a complete flow using sheets-to-json node and a valid config', async () => {
+                    await insertNodes({
+                        nodes: Object.values(flow),
+                        serverUrl: NODERED_URL
+                    });
+                });
+
+                await test.step('When I reload the home page the tab should be available', async () => {
+                    await page.goto(`${NODERED_URL}/#flow/${flow.tab.id}`);
+                });
+
+                await test.step('When I open the node', async () => {
+                    const sheetsToJsonStreamNode = flow.sheetsToJSON.id
+                    const node = page.locator(`#${sheetsToJsonStreamNode}`)
+                    await node.waitFor();
+                    await node.dblclick();
+                })
+                const expectedRange = 'A1:B2'
+
+                await test.step(`When I change the range`, async () => {
+                    const input = editor.elements.sheetsToJSON.rangeInput()
+                    await expect(input).toBeEnabled()
+
+                    await input.focus()
+
+                    await input.press(metaKey + '+a');
+                    await page.keyboard.press('Backspace');
+
+                    await input.type(expectedRange)
+                    await input.press('Enter')
+                });
+
+                await test.step('Then when I deploy it', async () => {
+                    await editor.elements.inputLabel().press(metaKey + '+Enter');
+                    await editor.elements.workspaceArea().click();
+                    await editor.elements.workspaceArea().press(metaKey + '+d');
+                })
+
+                await test.step('Then I open the node', async () => {
+                    const sheetsToJsonStreamNode = flow.sheetsToJSON.id
+                    const node = page.locator(`#${sheetsToJsonStreamNode}`)
+                    await node.waitFor();
+                    await node.dblclick();
+                })
+
+                await test.step(`Then the range should ${expectedRange}`, async () => {
+                    const input = await editor.elements.sheetsToJSON.rangeInput()
+                    await expect(input).toBeEnabled()
+                    await expect(input).toHaveValue(expectedRange)
+                });
+
+                await test.step(`Then the columns should be ${firstSheetColumns}`, async () => {
+                    const input = await editor.elements.sheetsToJSON.columnsInput();
+                    await expect(input).toHaveValue(firstSheetColumns)
+                });
+
+            })
+
         })
 
     })

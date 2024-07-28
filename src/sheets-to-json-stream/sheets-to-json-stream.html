@@ -22,14 +22,21 @@
             return result.json();
         }
 
+        toggleEnabledSheetList(hide) {
+            this.sheetListEl.prop('disabled', hide);
+
+            const hideRange = hide ? 'disable' : 'enable'
+            this.sheetsColumnsEl.typedInput(hideRange);
+            this.sheetsRangeEl.typedInput(hideRange);
+        }
+
         updateSheetListAndCells(options, hide = false) {
             this.sheetListEl.empty();
             options.forEach(option => {
                 this.sheetListEl.append(new Option(option.text, option.value, option.selected));
             });
             this.sheetListValuesEl.val(JSON.stringify(options));
-            this.sheetListEl.prop('disabled', hide);
-            this.sheetsColumnsEl.prop('disabled', hide);
+            this.toggleEnabledSheetList(hide)
         }
 
         async retrieveMetadata(sheetId) {
@@ -41,6 +48,8 @@
         }
 
         async updateCellOptions() {
+            this.toggleEnabledSheetList(true)
+            debugger
             const sheetTitle = this.sheetListEl.val();
             const options = JSON.parse(this.sheetListValuesEl.val() || '[]').map(item => ({
                 ...item,
