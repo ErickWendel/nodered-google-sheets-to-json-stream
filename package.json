@@ -8,14 +8,15 @@
   "scripts": {
     "start": "node sheets-to-json-stream.js",
     "copy-files": "rsync -av --exclude='node_modules'  --exclude='misc' --include='*.html' --include='*.js' --include='*.json' --include='*/' --exclude='*' ./ misc/data/node_modules/@erickwendel/nodered-sheets-to-json-stream",
-    "docker:start-nodered": "cd misc && docker-compose up -d",
+    "docker:start-nodered": "cd misc && docker-compose up -d && npm run docker:install-module",
     "docker:stop-nodered": "cd misc && docker-compose down",
     "docker:clean": "cd misc && docker-compose down --volumes",
     "docker:restart-nodered": "cd misc && docker-compose restart nodered",
     "docker:install-module": "./misc/install-module.sh",
     "docker:restart-nodered-on-change": "nodemon -e html,js,json,css --exec 'npm run copy-files && cd misc && npm run docker:restart-nodered && docker logs -f nodered'",
     "playwright:web": "npx playwright test --ui --debug",
-    "playwright:headless": "npx playwright test"
+    "playwright:headless": "npx playwright test",
+    "test": "npm run playwright:headless"
   },
   "author": "erickwendel",
   "keywords": [

@@ -3,7 +3,8 @@
 - This project uses **playwright** to make e2e tests as users iteract with the page
 
 - First you'll need to create at least 2 sheets on a Google Spreadsheet, with at least 5 columns and 5 lines.
-- Then update the `spreadsheet.json` in the root of this project adding your credentials and spreadsheet metada
+- Then update the `spreadsheet.example.json` in the root of this project adding your credentials and spreadsheet metada
+- Then rename it to `spreadsheet.json`
 
 ## In case you're curious on how you `spreadsheet.json` should look like
 
