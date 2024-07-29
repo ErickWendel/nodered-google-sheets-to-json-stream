@@ -42,7 +42,7 @@
 - Then run `npm run docker:start` to spin up the container and install the local package into the container
 - Then run `npm ci` to restore dependencies
 - Then run `npx playwright install chromium --with-deps` to install playwright's chromium
-- Then run `npm test` to run test suite
+- Then run `npm run test:dev` to run test suite
 
 # Making changes
 

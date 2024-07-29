@@ -5,7 +5,7 @@ module.exports = function (RED) {
         this.config = ctx.config;
     }
 
-    RED.nodes.registerType("gauth", gauth, {
+    RED.nodes.registerType("googleauth", gauth, {
         credentials: {
             config: {}
         }
