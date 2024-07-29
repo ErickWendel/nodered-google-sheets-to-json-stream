@@ -25,7 +25,7 @@
     "google-api",
     "google-sheets",
     "on-demand-processing",
-    "cypress"
+    "playwright"
   ],
   "node-red": {
     "version": ">=2.0.0",
