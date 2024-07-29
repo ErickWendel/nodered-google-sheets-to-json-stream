@@ -342,14 +342,14 @@ describe('Node-RED Interface', () => {
 
             await test.step(`And I should see the sheet's columns as an array`, async () => {
                 const columns = editor.elements.sheetsToJSON.columnsInput()
-                await expect(columns).toBeEnabled();
+                await columns.waitFor();
 
                 await expect(columns).toHaveValue(JSON.stringify(firstSheet?.columns));
             });
 
             await test.step(`And the sheet's range should contain "${firstSheet?.range}"`, async () => {
                 const range = editor.elements.sheetsToJSON.rangeInput()
-                await expect(range).toBeEnabled();
+                await range.waitFor();
                 // @ts-ignore
                 await expect(range).toHaveValue(firstSheet.range);
             });
@@ -567,9 +567,9 @@ describe('Node-RED Interface', () => {
                     await node.dblclick();
                 })
 
-                await test.step(`And the range should ${expectedRange}`, async () => {
+                await test.step(`And the range should be ${expectedRange}`, async () => {
                     const input = await editor.elements.sheetsToJSON.rangeInput()
-                    await expect(input).toBeEnabled()
+                    await input.waitFor();
                     await expect(input).toHaveValue(expectedRange)
                 });
 

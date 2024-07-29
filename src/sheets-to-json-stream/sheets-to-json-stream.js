@@ -70,7 +70,6 @@ function SheetsToJSONModule(RED, sheetsToJSON) {
                 await sheetsToJSON.process({
                     context,
                     isProcessing: _isProcessing,
-                    columns: context.columns,
                     onData(data) {
                         progress.update()
                         node.send({
