@@ -1,8 +1,9 @@
-# nodered-google-sheets-to-json-stream
+# nodered-contrib-google-sheets-to-json-stream
+
+This Node-RED custom node lets you consume google sheets spreadsheets on demand.
 
 ![Build Status](https://github.com/ErickWendel/nodered-google-sheets-to-json-stream/workflows/Nodered%20Google%20Sheets%20to%20JSON%20Stream/badge.svg)
 
-This Node-RED custom node lets you consume google sheets spreadsheets on demand.
 
 ## Why
 
@@ -12,7 +13,7 @@ It also doesn't automatically set the sheet range nor parse data to JSON nor all
 
 ### Solution and features
 
-This module **nodered-google-sheets-to-json-stream** came to solve these problems by processing data on demand and providing a good developer experience.
+This module **nodered-contrib-google-sheets-to-json-stream** came to solve these problems by processing data on demand and providing a good developer experience.
 
 Once you add your google sheets credentials and put the spreadSheetId, it:
 - auto completes fields listing all sheets in the spreadsheet
