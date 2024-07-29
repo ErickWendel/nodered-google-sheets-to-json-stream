@@ -1,6 +1,6 @@
 {
   "name": "@erickwendel/nodered-sheets-to-json-stream",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "main": "sheets-to-json-stream.js",
   "bugs": {
     "url": "https://github.com/ErickWendel/nodered-sheets-to-json-stream/issues"
