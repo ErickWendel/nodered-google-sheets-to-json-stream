@@ -14,10 +14,9 @@
     "docker:restart-nodered": "cd misc && docker-compose restart nodered",
     "docker:install-module": "./misc/install-module.sh",
     "docker:restart-nodered-on-change": "nodemon -e html,js,json,css --exec 'npm run copy-files && cd misc && npm run docker:restart-nodered && docker logs -f nodered'",
-    "playwright:web": "npx playwright test --ui --debug",
-    "playwright:headless": "npx playwright test",
-    "test": "npm run playwright:headless",
-    "test:dev": "export GOOGLE_SHEETS_AUTH_FILE=$(cat spreadsheets.json) && npm run playwright:headless"
+    "test": "npx playwright test",
+    "test:dev": "export GOOGLE_SHEETS_AUTH_FILE=$(cat spreadsheets.json) && npx playwright test --trace on",
+    "test:dev:ui": "export GOOGLE_SHEETS_AUTH_FILE=$(cat spreadsheets.json) && npx playwright test --ui --debug"
   },
   "author": "erickwendel",
   "keywords": [

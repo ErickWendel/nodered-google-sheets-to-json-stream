@@ -42,7 +42,7 @@ jobs:
       run: npm run docker:install-module
 
     - name: Run Playwright tests
-      run: npm run playwright:headless
+      run: npm test
       env:
         GOOGLE_SHEETS_AUTH_FILE: ${{ secrets.GOOGLE_SHEETS_AUTH_FILE }}
 

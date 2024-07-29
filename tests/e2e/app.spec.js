@@ -21,6 +21,15 @@ const TCP_PORT = 3000
 const { version } = require('os')
 const metaKey = version().includes('Darwin') ? 'Meta' : 'Control'
 
+async function cleanField(input) {
+    await expect(input).toBeVisible();
+    await expect(input).toBeEnabled();
+
+    await input.focus();
+    await input.click({ clickCount: 3 });
+    await input.press('Backspace');
+
+}
 describe('Node-RED Interface', () => {
     beforeAll(async () => {
         await deleteAllFlows({
@@ -107,16 +116,13 @@ describe('Node-RED Interface', () => {
             });
 
             await test.step(`And I manually choose range as ${rangeOfTwoLines} and save`, async () => {
-                const range = editor.elements.sheetsToJSON.rangeInput()
-                await expect(range).toBeEnabled()
-                await range.focus()
+                const input = editor.elements.sheetsToJSON.rangeInput()
 
-                await range.press(metaKey + '+a');
-                await page.keyboard.press('Backspace');
+                await cleanField(input)
 
-                await range.type(rangeOfTwoLines)
-                await range.press('Enter')
-                await range.press(metaKey + '+Enter');
+                await input.type(rangeOfTwoLines)
+                await page.keyboard.press('Enter')
+                await page.keyboard.press(metaKey + '+Enter');
             });
 
             await test.step('And I can deploy Node-RED without errors', async () => {
@@ -179,24 +185,20 @@ describe('Node-RED Interface', () => {
 
                 await test.step(`And I change the range`, async () => {
                     const input = editor.elements.sheetsToJSON.rangeInput()
-                    await expect(input).toBeEnabled()
+                    await cleanField(input)
 
-                    await input.press(metaKey + '+a');
-                    await input.press('Backspace');
 
                     await input.type(expectedRange)
-                    await input.press('Enter');
+                    await page.keyboard.press('Enter');
                 });
 
                 await test.step(`And I change the columns`, async () => {
                     const input = editor.elements.sheetsToJSON.columnsInput()
-                    await expect(input).toBeEnabled()
 
-                    await input.press(metaKey + '+a');
-                    await input.press('Backspace');
+                    await cleanField(input)
 
                     await input.type(JSON.stringify(expectedJSONColumns))
-                    await input.press('Enter');
+                    await page.keyboard.press('Enter');
                 });
 
                 await test.step('And I deploy it', async () => {
@@ -262,24 +264,18 @@ describe('Node-RED Interface', () => {
 
                 await test.step(`And I change the range`, async () => {
                     const input = editor.elements.sheetsToJSON.rangeInput()
-                    await expect(input).toBeEnabled()
-
-                    await input.press(metaKey + '+a');
-                    await input.press('Backspace');
+                    await cleanField(input)
 
                     await input.type(expectedRange)
-                    await input.press('Enter');
+                    await page.keyboard.press('Enter');
                 });
 
                 await test.step(`And I change the columns`, async () => {
                     const input = editor.elements.sheetsToJSON.columnsInput()
-                    await expect(input).toBeEnabled()
-
-                    await input.press(metaKey + '+a');
-                    await input.press('Backspace');
+                    await cleanField(input)
 
                     await input.type(JSON.stringify(expectedJSONColumns))
-                    await input.press('Enter');
+                    await page.keyboard.press('Enter');
                 });
 
                 await test.step('And I deploy it', async () => {
@@ -551,13 +547,10 @@ describe('Node-RED Interface', () => {
                 const expectedRange = 'A1:B2'
                 await test.step(`And I change the range`, async () => {
                     const input = editor.elements.sheetsToJSON.rangeInput()
-                    await expect(input).toBeEnabled()
-
-                    await input.press(metaKey + '+a');
-                    await input.press('Backspace');
+                    await cleanField(input)
 
                     await input.type(expectedRange)
-                    await input.press('Enter');
+                    await page.keyboard.press('Enter');
                 });
 
                 await test.step('And I deploy it', async () => {

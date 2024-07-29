@@ -18,7 +18,7 @@ function generateValidConfigNode({ googleAuthCredentials }) {
     return {
         config: {
             "id": nodeId,
-            "type": "gauth",
+            "type": "googleauth",
             "name": googleAuthCredentials.client_email,
             "credentials": {
                 "config": JSON.stringify(googleAuthCredentials)

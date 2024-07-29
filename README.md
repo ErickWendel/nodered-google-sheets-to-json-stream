@@ -1,8 +1,10 @@
 # nodered-google-sheets-to-json-stream
 
+[![Build Status](https://github.com/ErickWendel/nodered-google-sheets-to-json-stream/workflows/Nodered%20Google%20Sheets%20to%20JSON%20Stream/badge.svg)](https://github.com/ErickWendel/nodered-google-sheets-to-json-stream/actions)
+
 This Node-RED custom node let you consume google sheets spreadsheets on demand.
 
-## Why:
+## Why
 
 My inspiration for creating this module was that the popular [node-red-contrib-google-sheets](https://flows.nodered.org/node/node-red-contrib-google-sheets) puts all the spreadsheet data in memory overloading Node.js and causing crashes while working with big sets of data (such as 10K+ sheets lines).
 
