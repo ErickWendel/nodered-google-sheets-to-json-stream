@@ -22,7 +22,7 @@ Once you add your google sheets credentials and put the spreadSheetId, it:
 - in the status, it shows how many lines were processed vs how many is missing
 
 ### Demo
-![Node-RED flow](./demos/complete-demo.gif)
+![Node-RED flow](https://raw.githubusercontent.com/ErickWendel/nodered-google-sheets-to-json-stream/main/demos/complete-demo.gif)
 
 ## Configuration
 ### Auth
