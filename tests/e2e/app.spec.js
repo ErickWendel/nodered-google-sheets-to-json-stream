@@ -1,9 +1,12 @@
 // @ts-nocheck
 
-console.assert(process.env.GOOGLE_SHEETS_AUTH_FILE, 'env GOOGLE_SHEETS_AUTH_FILE is required!')
+const envSheets = process.env.SPREADSHEETS_FILE
+if (!envSheets) {
+    console.assert(envSheets, 'env SPREADSHEETS_FILE is required!')
+    process.exit(1)
+}
 
-// @ts-ignore
-const spreadsheets = JSON.parse(process.env.GOOGLE_SHEETS_AUTH_FILE || '{}')
+const spreadsheets = JSON.parse(envSheets);
 if (!spreadsheets?.googleAuthCredentials?.client_email || !spreadsheets?.googleAuthCredentials?.private_key) {
     console.error('env should contain client_email and private_key')
     process.exit(1)

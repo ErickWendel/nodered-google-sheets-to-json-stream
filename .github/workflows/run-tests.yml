@@ -16,7 +16,6 @@ jobs:
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
-
     - name: Use Node.js
       uses: actions/setup-node@v4
       with:
@@ -42,9 +41,10 @@ jobs:
       run: npm run docker:install-module
 
     - name: Run Playwright tests
-      run: npm test
+      shell: bash
       env:
-        GOOGLE_SHEETS_AUTH_FILE: ${{ secrets.GOOGLE_SHEETS_AUTH_FILE }}
+        SPREADSHEETS_FILE: ${{ secrets.SPREADSHEETS_FILE }}
+      run: npm test
 
     - uses: actions/upload-artifact@v4
       if: always()
