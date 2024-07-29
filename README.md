@@ -15,11 +15,11 @@ It also doesn't automatically set the sheet range nor parse data to JSON nor all
 This module **nodered-google-sheets-to-json-stream** came to solve these problems by processing data on demand and providing a good developer experience.
 
 Once you add your google sheets credentials and put the spreadSheetId, it:
-    - auto complete fields listing all sheets in the spreadsheet
-    - automatically set the range of lines and columns available in the sheets
-    - parse the available columns (using the sheet's first line) into JSON
-    - process items on demand (currently process 500 items per time if the range is bigger than 500)
-    - in the status, it shows how many lines were processed vs how many is missing
+- auto complete fields listing all sheets in the spreadsheet
+- automatically set the range of lines and columns available in the sheets
+- parse the available columns (using the sheet's first line) into JSON
+- process items on demand (currently process 500 items per time if the range is bigger than 500)
+- in the status, it shows how many lines were processed vs how many is missing
 
 ### Demo
 ![Node-RED flow](./demos/complete-demo.gif)
