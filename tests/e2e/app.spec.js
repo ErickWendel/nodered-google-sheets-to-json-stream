@@ -1,6 +1,10 @@
 // @ts-nocheck
 
-const spreadsheet = require('../../spreadsheet.json');
+console.assert(process.env.GOOGLE_SHEETS_AUTH_FILE, 'env GOOGLE_SHEETS_AUTH_FILE is required!')
+
+// @ts-ignore
+const spreadsheets = JSON.parse(process.env.GOOGLE_SHEETS_AUTH_FILE)
+
 const { test, expect } = require('@playwright/test')
 const { describe, beforeEach, afterAll, beforeAll } = test;
 
@@ -45,13 +49,13 @@ describe('Node-RED Interface', () => {
         await page.goto(NODERED_URL);
     })
 
-    const firstSheet = spreadsheet.sheets.at(0)
-    const secondSheet = spreadsheet.sheets.at(1)
+    const firstSheet = spreadsheets.sheets.at(0)
+    const secondSheet = spreadsheets.sheets.at(1)
 
     const firstSheetColumns = JSON.stringify(firstSheet.columns)
     const secondSheetColumns = JSON.stringify(secondSheet.columns)
 
-    const sheetsNames = spreadsheet.sheets.map(item => item.name)
+    const sheetsNames = spreadsheets.sheets.map(item => item.name)
 
     describe('should create a flow with an API and setup sheets', () => {
 
@@ -79,11 +83,11 @@ describe('Node-RED Interface', () => {
                 const node = page.locator(`#${sheetsToJsonStreamNode}`)
                 await node.waitFor();
                 await node.dblclick();
-                await editor.addValidConfig(spreadsheet.googleAuthCredentials);
+                await editor.addValidConfig(spreadsheets.googleAuthCredentials);
             });
 
-            await test.step(`And I enter the spreadsheet ID "${spreadsheet.spreadsheetId}" and leave the input field`, async () => {
-                await editor.elements.sheetsToJSON.sheetIdInput().type(spreadsheet.spreadsheetId);
+            await test.step(`And I enter the spreadsheet ID "${spreadsheets.spreadsheetId}" and leave the input field`, async () => {
+                await editor.elements.sheetsToJSON.sheetIdInput().type(spreadsheets.spreadsheetId);
                 await editor.elements.sheetsToJSON.sheetIdInput().press('Tab');
             });
 
@@ -145,9 +149,9 @@ describe('Node-RED Interface', () => {
                 const expectedRange = firstSheet.range.split(':').at(0).concat(`:${columnLetter}${linesToConsume}`)
 
                 const flow = generateTCPFlowWithCompleteData({
-                    sheets: spreadsheet.sheets,
-                    spreadsheetId: spreadsheet.spreadsheetId,
-                    googleAuthCredentials: spreadsheet.googleAuthCredentials,
+                    sheets: spreadsheets.sheets,
+                    spreadsheetId: spreadsheets.spreadsheetId,
+                    googleAuthCredentials: spreadsheets.googleAuthCredentials,
                     tcpPort: TCP_PORT,
                 })
 
@@ -228,9 +232,9 @@ describe('Node-RED Interface', () => {
                 const expectedRange = firstSheet.range.split(':').at(0).concat(`:${columnLetter}${linesToConsume}`)
 
                 const flow = generateTCPFlowWithCompleteData({
-                    sheets: spreadsheet.sheets,
-                    spreadsheetId: spreadsheet.spreadsheetId,
-                    googleAuthCredentials: spreadsheet.googleAuthCredentials,
+                    sheets: spreadsheets.sheets,
+                    spreadsheetId: spreadsheets.spreadsheetId,
+                    googleAuthCredentials: spreadsheets.googleAuthCredentials,
                     tcpPort: TCP_PORT,
                 })
 
@@ -321,11 +325,11 @@ describe('Node-RED Interface', () => {
                 await node.waitFor();
 
                 await node.dblclick();
-                await editor.addValidConfig(spreadsheet.googleAuthCredentials);
+                await editor.addValidConfig(spreadsheets.googleAuthCredentials);
             });
 
-            await test.step(`And I enter the spreadsheet ID "${spreadsheet.spreadsheetId}" and leave the input field`, async () => {
-                await editor.elements.sheetsToJSON.sheetIdInput().type(spreadsheet.spreadsheetId);
+            await test.step(`And I enter the spreadsheet ID "${spreadsheets.spreadsheetId}" and leave the input field`, async () => {
+                await editor.elements.sheetsToJSON.sheetIdInput().type(spreadsheets.spreadsheetId);
                 await editor.elements.sheetsToJSON.sheetIdInput().press('Tab');
             });
 
@@ -366,8 +370,8 @@ describe('Node-RED Interface', () => {
                 const editor = new NodeRedEditor({ page });
                 const flow = generatePreviouslyCreatedSheetsToJSON({
                     sheets: [secondSheet, firstSheet],
-                    spreadsheetId: spreadsheet.spreadsheetId,
-                    googleAuthCredentials: spreadsheet.googleAuthCredentials,
+                    spreadsheetId: spreadsheets.spreadsheetId,
+                    googleAuthCredentials: spreadsheets.googleAuthCredentials,
                 })
 
                 await test.step('Given I insert a complete flow using sheets-to-json node and a valid config', async () => {
@@ -391,7 +395,7 @@ describe('Node-RED Interface', () => {
 
                     await test.step(`Then the fields should contain data for spreadsheet id`, async () => {
                         const input = await editor.elements.sheetsToJSON.sheetIdInput()
-                        await expect(input).toHaveValue(spreadsheet.spreadsheetId)
+                        await expect(input).toHaveValue(spreadsheets.spreadsheetId)
                     });
 
                     await test.step(`And the range field should be ${secondSheet.range}`, async () => {
@@ -409,7 +413,7 @@ describe('Node-RED Interface', () => {
 
                         expect(options).toStrictEqual([
                             secondSheet.name,
-                            spreadsheet.sheets.at(0).name
+                            spreadsheets.sheets.at(0).name
                         ]);
                     });
 
@@ -438,8 +442,8 @@ describe('Node-RED Interface', () => {
                 const editor = new NodeRedEditor({ page });
                 const flow = generatePreviouslyCreatedSheetsToJSON({
                     sheets: [secondSheet, firstSheet],
-                    spreadsheetId: spreadsheet.spreadsheetId,
-                    googleAuthCredentials: spreadsheet.googleAuthCredentials,
+                    spreadsheetId: spreadsheets.spreadsheetId,
+                    googleAuthCredentials: spreadsheets.googleAuthCredentials,
                 })
 
                 await test.step('Given I insert a complete flow using sheets-to-json node and a valid config', async () => {
@@ -517,8 +521,8 @@ describe('Node-RED Interface', () => {
                 const editor = new NodeRedEditor({ page });
                 const flow = generatePreviouslyCreatedSheetsToJSON({
                     sheets: [secondSheet, firstSheet],
-                    spreadsheetId: spreadsheet.spreadsheetId,
-                    googleAuthCredentials: spreadsheet.googleAuthCredentials,
+                    spreadsheetId: spreadsheets.spreadsheetId,
+                    googleAuthCredentials: spreadsheets.googleAuthCredentials,
                 })
 
 
