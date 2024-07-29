@@ -1,0 +1,22 @@
+{
+    "spreadsheetId": "1Mte7nOo6oqvI4me-tnEenCci0l8bR04810B_q1U_1Ro",
+    "sheets": [
+        {
+            "name": "Sheet1",
+            "range": "A1:AZ2279",
+            "columns": [
+                "sheetColumn1"
+            ]
+        },
+        {
+            "name": "Sheet2",
+            "range": "A1:Z1000",
+            "columns": []
+        }
+    ],
+    "googleAuthCredentials": {
+        "type": "service_account",
+        "private_key": "-----BEGIN PRIVATE KEY-----\n=\n-----END PRIVATE KEY-----\n",
+        "client_email": "email@ew-academy.iam.gserviceaccount.com"
+    }
+}
