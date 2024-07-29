@@ -3,7 +3,11 @@
 console.assert(process.env.GOOGLE_SHEETS_AUTH_FILE, 'env GOOGLE_SHEETS_AUTH_FILE is required!')
 
 // @ts-ignore
-const spreadsheets = JSON.parse(process.env.GOOGLE_SHEETS_AUTH_FILE)
+const spreadsheets = JSON.parse(process.env.GOOGLE_SHEETS_AUTH_FILE || '{}')
+if (!spreadsheets?.googleAuthCredentials?.client_email || !spreadsheets?.googleAuthCredentials?.private_key) {
+    console.error('env should contain client_email and private_key')
+    process.exit(1)
+}
 
 const { test, expect } = require('@playwright/test')
 const { describe, beforeEach, afterAll, beforeAll } = test;
@@ -143,7 +147,7 @@ describe('Node-RED Interface', () => {
             const expectedJSONColumns = firstSheet.columns.slice(2, expectedAmountOfColumns)
             const columnLetter = 'C' // will get only the first 3 columns
 
-            test.skip(`Use case: using range A1:${columnLetter}${linesToConsume} and columns ${JSON.stringify(expectedJSONColumns)} it should process ${expectedAmountOfLines} lines`, async ({ page }) => {
+            test(`Use case: using range A1:${columnLetter}${linesToConsume} and columns ${JSON.stringify(expectedJSONColumns)} it should process ${expectedAmountOfLines} lines`, async ({ page }) => {
                 const editor = new NodeRedEditor({ page });
                 const regex = /\:\D+(?<column>[a-zA-Z]+)(?<digits>\d+)/g;
                 const expectedRange = firstSheet.range.split(':').at(0).concat(`:${columnLetter}${linesToConsume}`)
@@ -226,7 +230,7 @@ describe('Node-RED Interface', () => {
             const expectedJSONColumns = firstSheet.columns.slice(2, columnsToConsume) // will ignore the first 3 columns
             const columnLetter = 'E' // will get only the first 5 columns but process 3 starting from the 2nd
 
-            test.skip(`Use case: using range ${firstSheet.range} and columns ${JSON.stringify(expectedJSONColumns)} it should process ${expectedAmountOfLines} lines`, async ({ page }) => {
+            test(`Use case: using range ${firstSheet.range} and columns ${JSON.stringify(expectedJSONColumns)} it should process ${expectedAmountOfLines} lines`, async ({ page }) => {
                 const editor = new NodeRedEditor({ page });
                 const regex = /\:\D+(?<column>[a-zA-Z]+)(?<digits>\d+)/g;
                 const expectedRange = firstSheet.range.split(':').at(0).concat(`:${columnLetter}${linesToConsume}`)
@@ -438,7 +442,7 @@ describe('Node-RED Interface', () => {
 
             })
 
-            test.skip('Use case: if the chosen sheet is changed its columns and range should be updated', async ({ page }) => {
+            test('Use case: if the chosen sheet is changed its columns and range should be updated', async ({ page }) => {
                 const editor = new NodeRedEditor({ page });
                 const flow = generatePreviouslyCreatedSheetsToJSON({
                     sheets: [secondSheet, firstSheet],
@@ -517,7 +521,7 @@ describe('Node-RED Interface', () => {
                 })
             })
 
-            test.skip('Use case: if the chosen range is changed nodered should persist it', async ({ page }) => {
+            test('Use case: if the chosen range is changed nodered should persist it', async ({ page }) => {
                 const editor = new NodeRedEditor({ page });
                 const flow = generatePreviouslyCreatedSheetsToJSON({
                     sheets: [secondSheet, firstSheet],
