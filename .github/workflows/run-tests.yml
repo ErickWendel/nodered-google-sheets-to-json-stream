@@ -32,6 +32,9 @@ jobs:
     - name: Start nodered
       run: npm run docker:start-nodered
 
+    - name: Create spreadsheets.json
+      run: echo "${{ secrets.GOOGLE_SHEETS_AUTH_FILE }}" > spreadsheets.json
+
     - name: Restore dependencies
       run: npm ci
 
