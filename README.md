@@ -21,6 +21,7 @@ Once you add your google sheets credentials and put the spreadSheetId, it:
 - parses the available columns (using the sheet's first line) into JSON
 - processes items on demand (currently process 500 items per time if the range is bigger than 500)
 - in the status, shows how many lines were processed vs how many is missing
+- if you trigger this module twice, stops the current processing
 
 ### Demo
 ![Node-RED flow](https://raw.githubusercontent.com/ErickWendel/nodered-google-sheets-to-json-stream/main/demos/complete-demo.gif)
