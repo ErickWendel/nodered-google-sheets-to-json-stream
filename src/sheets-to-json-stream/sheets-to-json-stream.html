@@ -130,11 +130,11 @@
 </script>
 
 <script type="text/javascript">
-    RED.nodes.registerType('sheets-to-json-stream', {
+    RED.nodes.registerType('google-sheets-to-json-stream', {
         category: 'function',
         color: '#0da95f',
         defaults: {
-            config: { value: "", type: 'googleauth' },
+            config: { value: "", type: 'google-sheets-config' },
             sheetId: { value: "" },
             sheetList: { value: "" },
             sheetListValues: { value: "" },
@@ -146,7 +146,7 @@
         outputs: 1,
         icon: "font-awesome/fa-table",
         label: function () {
-            return this.name || "sheets-to-json-stream";
+            return this.name || "google-sheets-to-json-stream";
         },
 
         oneditprepare: function () {
@@ -173,7 +173,7 @@
 
 </script>
 
-<script type="text/html" data-template-name="sheets-to-json-stream">
+<script type="text/html" data-template-name="google-sheets-to-json-stream">
     <div class="form-row">
         <label for="node-config-input-config">config</label>
         <input type="text" id="node-input-config">
@@ -213,7 +213,7 @@
     </div>
 </script>
 
-<script type="text/html" data-help-name="sheets-to-json-stream">
+<script type="text/html" data-help-name="google-sheets-to-json-stream">
     <p> Read and Write Google Sheets data.</p>
 
     <h3> Details </h4>

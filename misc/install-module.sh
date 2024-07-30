@@ -30,7 +30,4 @@ docker exec nodered sh -c "cd /data && npm install $PACKAGE --legacy-peer-deps -
 # Restart Node-RED using your custom script
 npm run docker:restart-nodered
 
-# Verify installation
-docker exec nodered sh -c 'ls /data/node_modules/@erickwendel'
-
 echo "Module installed and Node-RED restarted successfully."

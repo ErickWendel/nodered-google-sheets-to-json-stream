@@ -18,7 +18,7 @@ function generateValidConfigNode({ googleAuthCredentials }) {
     return {
         config: {
             "id": nodeId,
-            "type": "googleauth",
+            "type": "google-sheets-config",
             "name": googleAuthCredentials.client_email,
             "credentials": {
                 "config": JSON.stringify(googleAuthCredentials)
@@ -46,7 +46,7 @@ function generatePreviouslyCreatedSheetsToJSON({ sheets, spreadsheetId, googleAu
         config: validConfig.config,
         sheetsToJSON: {
             "id": nodeSheetId,
-            "type": "sheets-to-json-stream",
+            "type": "google-sheets-to-json-stream",
             "z": emptyTaB.tab.id,
             "config": validConfig.config.id,
             "sheetId": spreadsheetId,
@@ -76,7 +76,7 @@ function generateSheetToJSONNode() {
         },
         sheetsToJSON: {
             id: sheetsToJsonStreamNodeId,
-            type: 'sheets-to-json-stream',
+            type: 'google-sheets-to-json-stream',
             name: generateRandomName('Sheets to JSON Stream', sheetsToJsonStreamNodeId),
             "x": 200,
             "y": 250,
@@ -131,7 +131,7 @@ function generateTCPFlowWithCompleteData({ tcpPort, sheets, spreadsheetId, googl
         config: validConfig.config,
         sheetsToJSON: {
             "id": sheetsToJsonStreamNodeId,
-            "type": "sheets-to-json-stream",
+            "type": "google-sheets-to-json-stream",
             "z": emptyTaB.tab.id,
             "config": validConfig.config.id,
             "sheetId": spreadsheetId,
@@ -224,7 +224,7 @@ function generateTCPFlow({ tcpPort }) {
         },
         sheetsToJSON: {
             id: sheetsToJsonStreamNodeId,
-            type: 'sheets-to-json-stream',
+            type: 'google-sheets-to-json-stream',
             name: generateRandomName('Sheets to JSON Stream', sheetsToJsonStreamNodeId),
             "x": 200, "y": 250,
             z: tabId,

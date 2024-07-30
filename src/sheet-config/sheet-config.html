@@ -1,5 +1,5 @@
 <script type="text/javascript">
-    RED.nodes.registerType('googleauth', {
+    RED.nodes.registerType('google-sheets-config', {
         category: 'config',
         credentials: {
             type: 'json',
@@ -38,7 +38,7 @@
     });
 </script>
 
-<script type="text/html" data-template-name="googleauth">
+<script type="text/html" data-template-name="google-sheets-config">
     <div class="form-row">
         <label for="node-config-input-config">Credentials</label>
         <textarea rows="15" cols="120" id="node-config-input-config" placeholder="Google Service Accounts Credentials JSON"></textarea>
@@ -46,7 +46,7 @@
     </div>
 </script>
 
-<script type="text/html" data-help-name="googleauth">
+<script type="text/html" data-help-name="google-sheets-config">
     <p>Google credentials</p>
     <h3>Details</h3>
     <p>Copy JSON object for a Google Service Account Here.</p>

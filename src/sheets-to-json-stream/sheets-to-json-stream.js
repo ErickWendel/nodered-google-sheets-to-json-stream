@@ -99,7 +99,7 @@ function SheetsToJSONModule(RED, sheetsToJSON) {
 module.exports = function main(RED) {
     const sheetsToJSON = new SheetsToJSON({ google, JWT });
     registerRoutes(RED, sheetsToJSON);
-    RED.nodes.registerType('sheets-to-json-stream', SheetsToJSONModule(RED, sheetsToJSON), {
+    RED.nodes.registerType('google-sheets-to-json-stream', SheetsToJSONModule(RED, sheetsToJSON), {
         credentials: {
             config: {}
         }
