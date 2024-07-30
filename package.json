@@ -1,5 +1,5 @@
 {
-  "name": "nodered-contrib-sheets-to-json-stream",
+  "name": "nodered-contrib-google-sheets-to-json-stream",
   "version": "1.0.0",
   "main": "sheets-to-json-stream.js",
   "bugs": {
