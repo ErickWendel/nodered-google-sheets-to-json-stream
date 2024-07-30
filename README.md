@@ -2,7 +2,7 @@
 
 ![Build Status](https://github.com/ErickWendel/nodered-google-sheets-to-json-stream/workflows/Nodered%20Google%20Sheets%20to%20JSON%20Stream/badge.svg)
 
-This Node-RED custom node let you consume google sheets spreadsheets on demand.
+This Node-RED custom node lets you consume google sheets spreadsheets on demand.
 
 ## Why
 
@@ -15,11 +15,11 @@ It also doesn't automatically set the sheet range nor parse data to JSON nor all
 This module **nodered-google-sheets-to-json-stream** came to solve these problems by processing data on demand and providing a good developer experience.
 
 Once you add your google sheets credentials and put the spreadSheetId, it:
-- auto complete fields listing all sheets in the spreadsheet
-- automatically set the range of lines and columns available in the sheets
-- parse the available columns (using the sheet's first line) into JSON
-- process items on demand (currently process 500 items per time if the range is bigger than 500)
-- in the status, it shows how many lines were processed vs how many is missing
+- auto completes fields listing all sheets in the spreadsheet
+- automatically sets the range of lines and columns available in the sheets
+- parses the available columns (using the sheet's first line) into JSON
+- processes items on demand (currently process 500 items per time if the range is bigger than 500)
+- in the status, shows how many lines were processed vs how many is missing
 
 ### Demo
 ![Node-RED flow](https://raw.githubusercontent.com/ErickWendel/nodered-google-sheets-to-json-stream/main/demos/complete-demo.gif)
@@ -73,4 +73,4 @@ You an checkout the examples in [./examples](https://github.com/ErickWendel/node
 
 Contributions are always welcome, consider opening an issue first and discuss with the community before opening a pull request
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) to learn how you can run all tests before changing the code
+See [CONTRIBUTING.md](https://github.com/ErickWendel/nodered-google-sheets-to-json-stream/blob/main/CONTRIBUTING.md) to learn how you can run all tests before changing the code
