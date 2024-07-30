@@ -3,7 +3,11 @@
   "version": "1.0.3",
   "main": "sheets-to-json-stream.js",
   "bugs": {
-    "url": "https://github.com/ErickWendel/nodered-sheets-to-json-stream/issues"
+    "url": "https://github.com/ErickWendel/nodered-google-sheets-to-json-stream/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ErickWendel/nodered-google-sheets-to-json-stream.git"
   },
   "scripts": {
     "start": "node sheets-to-json-stream.js",
