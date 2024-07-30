@@ -40,6 +40,7 @@
 - Make sure you have **Docker** and **Docker-compose** Installed
 
 - Then run `npm run docker:start` to spin up the container and install the local package into the container
+- Then run `npm docker:install-module` to install this module in the docker container
 - Then run `npm ci` to restore dependencies
 - Then run `npx playwright install chromium --with-deps` to install playwright's chromium
 - Then run `npm run test:dev` to run test suite
