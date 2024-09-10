@@ -55,7 +55,7 @@ Share your sheet with the email address of the service account eg `nodered@noder
 The sheet ID can be found in the URL of your google sheet, for example in
 `https://docs.google.com/spreadsheets/d/1UuVIH2O38XK0TfPMGHk0HG_ixGLtLk6WoBKh4YSrDm4/edit#gid=0`
 
-Where the ID will be `1UuVIH2O38XK0TfPMGHk0HG_ixGLtLk6WoBKh4YSrDm4/edit#gid=0`
+Where the ID will be `1UuVIH2O38XK0TfPMGHk0HG_ixGLtLk6WoBKh4YSrDm4`
 
 
 ## Example
