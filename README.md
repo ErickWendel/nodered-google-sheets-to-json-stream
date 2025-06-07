@@ -48,7 +48,7 @@ Share your sheet with the email address of the service account eg `nodered@noder
 2. This module gets `range` from the A1 until the line **google sheets api** returns but sometimes empty lines are in the end
     - Make sure you delete all blank lines in the end of the file to avoid processing empty fields
 3. If you spreadsheet contains blank items, the google API might skip this line
-    - Replace all black items with `" "` (see [how-do-you-replace-blank-cells-with-zero-in-google-sheets](https://scales.arabpsychology.com/stats/how-do-you-replace-blank-cells-with-zero-in-google-sheets/#google_vignette)) to know how to fix it
+    - Replace all blank items with `" "` (see [how-do-you-replace-blank-cells-with-zero-in-google-sheets](https://scales.arabpsychology.com/stats/how-do-you-replace-blank-cells-with-zero-in-google-sheets/#google_vignette)) to know how to fix it
 
 ### Sheets
 
