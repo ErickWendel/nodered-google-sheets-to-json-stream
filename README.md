@@ -35,7 +35,7 @@ Create a new service account from [This Page](https://console.cloud.google.com/i
 
 Download a JSON credentials object for the service account.
 
-Give that account access to the sheets API.
+Give that account access to the [sheets API](https://console.cloud.google.com/apis/library/sheets.googleapis.com).
 
 Share your sheet with the email address of the service account eg `nodered@nodered-12345.iam.gserviceaccount.com`
 
